@@ -317,7 +317,6 @@ namespace MaykerStudio.SceneThumbnails
             SetSectionIcon("stt-icon-preview", "d_SceneAsset Icon");
             SetSectionIcon("stt-icon-resolution", "d_Settings Icon");
             SetSectionIcon("stt-icon-framing", "d_Camera Icon");
-            SetSectionIcon("stt-icon-bgfx", "d_Skybox Icon");
             SetSectionIcon("stt-icon-layers", "d_TagManager Icon");
             SetSectionIcon("stt-icon-batch", "d_FolderOpened Icon");
         }

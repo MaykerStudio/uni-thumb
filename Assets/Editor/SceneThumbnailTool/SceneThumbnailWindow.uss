@@ -63,14 +63,18 @@
 .stt-card-header-row {
     flex-direction: row;
     align-items: center;
-    gap: 4px;
     margin-bottom: 4px;
+}
+
+.stt-card-header-row .stt-section-header {
+    margin: 0;
 }
 
 .stt-section-icon {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
+    margin-right: 6px;
 }
 
 .stt-header {
@@ -183,11 +187,14 @@
 .stt-presets-row {
     flex-direction: row;
     margin-top: 6px;
-    gap: 4px;
 }
 
 .stt-preset-button {
     flex-grow: 1;
+}
+
+.stt-preset-button + .stt-preset-button {
+    margin-left: 4px;
 }
 
 .stt-preset-button:hover {

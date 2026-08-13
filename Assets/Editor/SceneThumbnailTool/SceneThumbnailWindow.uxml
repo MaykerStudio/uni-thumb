@@ -48,7 +48,6 @@
                 </ui:VisualElement>
             </ui:VisualElement>
             <ui:Foldout name="bg-effects-foldout" text="Background &amp; Effects" class="stt-card stt-foldout" toggle-on-label-click="true" view-data-key="stt-bg-effects-foldout">
-                <ui:Image name="stt-icon-bgfx" class="stt-section-icon stt-hidden" />
                 <ui:EnumField name="bg-mode-field" label="Mode" tooltip="Skybox renders RenderSettings.skybox; Solid Color clears to color" />
                 <uie:ColorField name="bg-color-field" label="Background color" show-alpha="true" tooltip="Background color only applies in Solid Color mode" />
                 <ui:Label name="bg-color-hint" text="Background color only applies in Solid Color mode." class="stt-mini stt-hint stt-hidden" />
