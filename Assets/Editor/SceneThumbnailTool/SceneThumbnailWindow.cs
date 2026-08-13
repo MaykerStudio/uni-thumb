@@ -79,6 +79,9 @@ namespace MaykerStudio.SceneThumbnails
         private bool _wantPostProcessing = true;
 
         [SerializeField]
+        private bool _captureUi = true;
+
+        [SerializeField]
         private LayerMask _layerMask = -1;
 
         [SerializeField]
@@ -149,6 +152,7 @@ namespace MaykerStudio.SceneThumbnails
         private Label _bgColorHint;
         private Toggle _lightingToggle;
         private Toggle _postfxToggle;
+        private Toggle _captureUiToggle;
         private MaskField _layersMask;
         private VisualElement _batchFolderRow;
         private TextField _batchFolderField;
@@ -199,6 +203,7 @@ namespace MaykerStudio.SceneThumbnails
         {
             EditorApplication.update -= OnBatchUpdateTick;
             EditorApplication.update -= RenderLivePreview;
+            _previewDirty = false;
             EditorSceneManager.activeSceneChangedInEditMode -= OnActiveSceneChangedInEditMode;
             SceneView.duringSceneGui -= OnSceneViewGui;
             EditorApplication.hierarchyChanged -= OnHierarchyChanged;
@@ -295,6 +300,7 @@ namespace MaykerStudio.SceneThumbnails
             _bgColorHint = rootVisualElement.Q<Label>("bg-color-hint");
             _lightingToggle = rootVisualElement.Q<Toggle>("lighting-toggle");
             _postfxToggle = rootVisualElement.Q<Toggle>("postfx-toggle");
+            _captureUiToggle = rootVisualElement.Q<Toggle>("capture-ui-toggle");
             _layersMask = rootVisualElement.Q<MaskField>("layers-mask");
             _batchFolderRow = rootVisualElement.Q<VisualElement>("batch-folder-row");
             _batchFolderField = rootVisualElement.Q<TextField>("batch-folder-field");
@@ -454,6 +460,14 @@ namespace MaykerStudio.SceneThumbnails
                     MarkPreviewDirty();
                 });
             }
+            if (_captureUiToggle != null)
+            {
+                _captureUiToggle.RegisterValueChangedCallback(evt =>
+                {
+                    _captureUi = evt.newValue;
+                    MarkPreviewDirty();
+                });
+            }
             if (_layersMask != null)
             {
                 _layersMask.RegisterValueChangedCallback(evt =>
@@ -555,6 +569,10 @@ namespace MaykerStudio.SceneThumbnails
             if (_postfxToggle != null)
             {
                 _postfxToggle.SetValueWithoutNotify(_wantPostProcessing);
+            }
+            if (_captureUiToggle != null)
+            {
+                _captureUiToggle.SetValueWithoutNotify(_captureUi);
             }
             if (_layersMask != null)
             {
@@ -745,6 +763,9 @@ namespace MaykerStudio.SceneThumbnails
                 cam.backgroundColor = settings.BackgroundColor;
                 cam.cullingMask = settings.layerMask;
 
+                SceneThumbnailCapture.UiCaptureSession uiSession = settings.CaptureUi
+                    ? SceneThumbnailCapture.UiCaptureSession.Begin(cam)
+                    : null;
                 try
                 {
                     if (settings.UseLightingOverride)
@@ -755,6 +776,10 @@ namespace MaykerStudio.SceneThumbnails
                 }
                 finally
                 {
+                    if (uiSession != null)
+                    {
+                        uiSession.Dispose();
+                    }
                     RestorePreviewLights();
                 }
                 cam.targetTexture = null;
@@ -1793,6 +1818,7 @@ namespace MaykerStudio.SceneThumbnails
             settings.BackgroundColor = _backgroundColor;
             settings.BackgroundMode = _backgroundMode;
             settings.WantPostProcessing = _wantPostProcessing;
+            settings.CaptureUi = _captureUi;
             settings.layerMask = _layerMask;
             return settings;
         }
