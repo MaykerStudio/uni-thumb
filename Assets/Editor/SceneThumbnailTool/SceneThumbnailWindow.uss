@@ -247,6 +247,8 @@
 }
 
 .stt-danger-button {
+    height: 28px;
+    flex-shrink: 0;
     background-color: var(--stt-error);
     color: #fff;
     -unity-font-style: bold;

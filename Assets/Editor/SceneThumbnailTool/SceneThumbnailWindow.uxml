@@ -20,7 +20,6 @@
                     <ui:Label name="preview-caption" class="stt-caption" />
                     <ui:Label name="stale-badge" text="stale" class="stt-badge stt-hidden" />
                 </ui:VisualElement>
-                <ui:Button name="delete-thumbnail-button" text="Delete Thumbnail" class="stt-danger-button stt-indented-button" tooltip="Deletes the thumbnail of the currently open scene" />
             </ui:VisualElement>
             <ui:VisualElement class="stt-card">
                 <ui:VisualElement class="stt-card-header-row">
@@ -89,6 +88,7 @@
         </ui:ScrollView>
         <ui:VisualElement class="stt-bottom-bar">
             <ui:Button name="generate-button" text="Generate Thumbnail" class="stt-generate-button" />
+            <ui:Button name="delete-thumbnail-button" text="Delete Thumbnail" class="stt-danger-button" tooltip="Deletes the thumbnail of the currently open scene" />
             <ui:Button name="generate-folder-button" text="Generate Folder Thumbnails" class="stt-generate-folder-button" tooltip="Generate thumbnails for all scenes in folder" />
             <ui:Label name="generate-busy-label" text="Generation in progress..." class="stt-mini stt-hidden" />
         </ui:VisualElement>
