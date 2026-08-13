@@ -65,6 +65,9 @@
     align-items: center;
     gap: 4px;
     margin-bottom: 4px;
+    padding-bottom: 2px;
+    border-bottom-width: 1px;
+    border-bottom-color: color-mix(in srgb, var(--stt-border) 60%, var(--stt-text-secondary));
 }
 
 .stt-section-icon {
@@ -72,7 +75,6 @@
     height: 14px;
     flex-shrink: 0;
     align-self: center;
-    margin-top: 1px;
 }
 
 .stt-header {
@@ -83,10 +85,8 @@
     font-size: 11px;
     -unity-font-style: bold;
     color: var(--stt-text);
-    margin: 0 0 4px;
-    padding-bottom: 2px;
-    border-bottom-width: 1px;
-    border-bottom-color: color-mix(in srgb, var(--stt-border) 60%, var(--stt-text-secondary));
+    margin: 0;
+    padding: 0;
 }
 
 .stt-scene-path {
@@ -201,6 +201,12 @@
     border-top-color: var(--stt-border);
     margin-top: 2px;
     padding-top: 0;
+}
+
+.stt-foldout .stt-section-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
 }
 
 .stt-batch-folder-row {

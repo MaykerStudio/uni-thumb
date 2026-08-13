@@ -319,6 +319,45 @@ namespace MaykerStudio.SceneThumbnails
             SetSectionIcon("stt-icon-framing", "d_Camera Icon");
             SetSectionIcon("stt-icon-layers", "d_TagManager Icon");
             SetSectionIcon("stt-icon-batch", "d_FolderOpened Icon");
+
+            Foldout bgfx = rootVisualElement.Q<Foldout>("bg-effects-foldout");
+            ApplyFoldoutIcon(bgfx, "d_Skybox Icon");
+        }
+
+        private void ApplyFoldoutIcon(Foldout foldout, string iconName)
+        {
+            if (foldout == null)
+            {
+                return;
+            }
+            Toggle headerToggle = foldout.Q<Toggle>();
+            if (headerToggle == null || headerToggle.childCount == 0)
+            {
+                return;
+            }
+            VisualElement input = headerToggle[0];
+            if (input == null || input.childCount < 2)
+            {
+                return;
+            }
+            VisualElement headerLabel = input[1];
+            if (headerLabel == null)
+            {
+                return;
+            }
+            GUIContent content = EditorGUIUtility.IconContent(iconName);
+            if (content == null || content.image == null)
+            {
+                return;
+            }
+            Image icon = new Image
+            {
+                image = content.image,
+                name = "stt-icon-bgfx",
+                pickingMode = PickingMode.Ignore
+            };
+            icon.AddToClassList("stt-section-icon");
+            input.Insert(input.IndexOf(headerLabel), icon);
         }
 
         private void SetSectionIcon(string elementName, string iconName)
