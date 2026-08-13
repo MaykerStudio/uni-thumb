@@ -1681,6 +1681,7 @@ namespace MaykerStudio.SceneThumbnails
             _previewStale = false;
             UpdateGenerateState();
             UpdatePreviewUI();
+            MarkPreviewDirty();
         }
 
         private void ClearFolderThumbnails()
@@ -1758,6 +1759,7 @@ namespace MaykerStudio.SceneThumbnails
             ResetActiveScenePreview();
             UpdateGenerateState();
             UpdateBatchUI();
+            MarkPreviewDirty();
         }
 
         private void ResetActiveScenePreview()
