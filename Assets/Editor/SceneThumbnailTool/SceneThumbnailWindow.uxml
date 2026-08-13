@@ -1,0 +1,75 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:VisualElement name="stt-root" class="stt-root">
+        <ui:VisualElement class="stt-header">
+            <ui:Label text="Active Scene" class="stt-section-header" />
+            <ui:Label name="active-scene-label" class="stt-scene-path" tooltip="Scene captured by Generate; must be saved first" />
+        </ui:VisualElement>
+        <ui:ScrollView name="settings-scroll" class="stt-scroll" mode="Vertical" vertical-scroller-visibility="Auto" horizontal-scroller-visibility="Hidden" view-data-key="stt-settings-scroll">
+            <ui:VisualElement class="stt-section">
+                <ui:Label text="Preview" class="stt-section-header" />
+                <ui:Label name="no-thumbnail-label" text="No thumbnail yet - press Generate Thumbnail" class="stt-empty-label" />
+                <ui:VisualElement name="preview-box" class="stt-preview-box stt-hidden">
+                    <ui:Image name="preview-image" class="stt-preview-image" scale-mode="ScaleToFit" />
+                </ui:VisualElement>
+                <ui:VisualElement name="preview-caption-row" class="stt-caption-row stt-hidden">
+                    <ui:Label name="preview-caption" class="stt-caption" />
+                    <ui:Label name="stale-badge" text="stale" class="stt-badge stt-hidden" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="stt-section">
+                <ui:Label text="Resolution" class="stt-section-header" />
+                <ui:DropdownField name="resolution-popup" label="Resolution" tooltip="Output pixel size; Custom allows up to 4096" />
+            </ui:VisualElement>
+            <ui:VisualElement class="stt-section">
+                <ui:Label text="Framing" class="stt-section-header" />
+                <ui:Toggle name="orthographic-toggle" label="Orthographic (2D)" tooltip="Capture with an orthographic camera (2D games)" />
+                <ui:Toggle name="sceneview-angle-toggle" label="Use current Scene View angle" tooltip="When off, orbit yaw/pitch below drive the capture camera." />
+                <ui:Slider name="framing-distance-slider" label="Framing Distance" low-value="0.25" high-value="4" value="1" tooltip="Multiplier of the auto-fit framing distance; the zoom control in orthographic (2D) mode." />
+                <ui:Label name="framing-disabled-hint" text="Disabled while using the Scene View angle in perspective mode" class="stt-mini stt-hint stt-hidden" />
+                <ui:VisualElement name="orbit-controls" class="stt-orbit-controls">
+                    <ui:Slider name="orbit-yaw-slider" label="Orbit Yaw" low-value="-180" high-value="180" value="45" tooltip="Horizontal rotation angle (-180 to 180)" />
+                    <ui:Slider name="orbit-pitch-slider" label="Orbit Pitch" low-value="-89" high-value="89" value="25" tooltip="Vertical rotation angle (-89 to 89)" />
+                    <ui:VisualElement name="presets-row" class="stt-presets-row">
+                        <ui:Button name="preset-front-button" text="Front" class="stt-preset-button" tooltip="Yaw 0, Pitch 0" />
+                        <ui:Button name="preset-threequarter-button" text="Three-Quarter" class="stt-preset-button" tooltip="Yaw 45, Pitch 25" />
+                        <ui:Button name="preset-top-button" text="Top" class="stt-preset-button" tooltip="Yaw 0, Pitch 85" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:Foldout name="bg-effects-foldout" text="Background &amp; Effects" class="stt-section stt-foldout" toggle-on-label-click="true" view-data-key="stt-bg-effects-foldout">
+                <ui:EnumField name="bg-mode-field" label="Mode" tooltip="Skybox renders RenderSettings.skybox; Solid Color clears to color" />
+                <uie:ColorField name="bg-color-field" label="Background color" show-alpha="true" tooltip="Background color only applies in Solid Color mode" />
+                <ui:Label name="bg-color-hint" text="Background color only applies in Solid Color mode." class="stt-mini stt-hint stt-hidden" />
+                <ui:Toggle name="lighting-toggle" label="Disable scene lighting" tooltip="Temporarily disables all lights during capture." />
+                <ui:Toggle name="postfx-toggle" label="Post-processing (Volume effects)" tooltip="Renders URP Volume effects (tonemapping, bloom, vignette) into the thumbnail." />
+            </ui:Foldout>
+            <ui:VisualElement class="stt-section">
+                <ui:Label text="Layers" class="stt-section-header" />
+                <uie:MaskField name="layers-mask" label="Include Layers" tooltip="Layers rendered into the thumbnail; the capture camera culling mask (Everything by default)." />
+            </ui:VisualElement>
+            <ui:VisualElement class="stt-section">
+                <ui:Label text="Batch" class="stt-section-header" />
+                <ui:VisualElement name="batch-folder-row" class="stt-batch-folder-row">
+                    <ui:TextField name="batch-folder-field" label="Batch folder" class="stt-batch-folder-field" tooltip="Project folder scanned recursively for scenes" />
+                    <ui:Button name="browse-button" text="Browse..." tooltip="Open folder picker" />
+                </ui:VisualElement>
+                <ui:Button name="use-scene-folder-button" text="Use current scene's folder" class="stt-indented-button" tooltip="Set batch folder to current scene's directory" />
+                <ui:Label name="batch-invalid-label" text="Not a project folder - pick a folder inside Assets/" class="stt-mini stt-error-text stt-hidden" />
+                <!-- Moved to stt-bottom-bar -->
+                <ui:VisualElement name="batch-progress" class="stt-batch-progress stt-hidden">
+                    <ui:ProgressBar name="batch-progress-bar" class="stt-progress-bar" />
+                    <ui:Label name="batch-progress-caption" class="stt-mini" />
+                    <ui:Button name="cancel-batch-button" text="Cancel Batch" tooltip="Stop the current batch operation" />
+                </ui:VisualElement>
+                <ui:HelpBox name="batch-result-help" class="stt-result-help stt-hidden" message-type="Info" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+        <ui:VisualElement class="stt-bottom-bar">
+            <ui:Button name="generate-button" text="Generate Thumbnail" class="stt-generate-button" />
+            <ui:Button name="generate-folder-button" text="Generate Folder Thumbnails" class="stt-generate-folder-button" tooltip="Generate thumbnails for all scenes in folder" />
+            <ui:Label name="generate-busy-label" text="Generation in progress..." class="stt-mini stt-hidden" />
+        </ui:VisualElement>
+        <ui:HelpBox name="status-help" class="stt-status-help stt-hidden" message-type="Info" />
+        <ui:Label name="footer-label" class="stt-footer" tooltip="Fixed storage-owned folder; read-only." />
+    </ui:VisualElement>
+</ui:UXML>
