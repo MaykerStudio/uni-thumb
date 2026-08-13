@@ -4,13 +4,10 @@
     --stt-text: #1a1a1a;
     --stt-text-secondary: #5a5a5a;
     --stt-border: #a0a0a6;
-    --stt-divider: #848488;
     --stt-accent: #0078d7;
     --stt-accent-tint: rgba(0, 120, 215, 0.12);
-    --stt-accent-hover: #268cdd;
     --stt-secondary: #2e8b57;
     --stt-secondary-tint: rgba(46, 139, 87, 0.12);
-    --stt-secondary-hover: #4d9c70;
     --stt-error: #c0392b;
     --stt-badge-bg: #fff3cd;
     --stt-badge-text: #664d03;
@@ -22,13 +19,10 @@
     --stt-text: #d6d6d6;
     --stt-text-secondary: #ababab;
     --stt-border: #505050;
-    --stt-divider: #747474;
     --stt-accent: #4f8fff;
     --stt-accent-tint: rgba(79, 143, 255, 0.16);
-    --stt-accent-hover: #69a0ff;
     --stt-secondary: #5cb85c;
     --stt-secondary-tint: rgba(92, 184, 92, 0.16);
-    --stt-secondary-hover: #74c374;
     --stt-error: #ff6b6b;
     --stt-badge-bg: #5c4a00;
     --stt-badge-text: #ffe082;
@@ -69,18 +63,16 @@
 .stt-card-header-row {
     flex-direction: row;
     align-items: center;
+    gap: 4px;
     margin-bottom: 4px;
-}
-
-.stt-card-header-row .stt-section-header {
-    margin: 0;
 }
 
 .stt-section-icon {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-    margin-right: 6px;
+    align-self: center;
+    margin-top: 1px;
 }
 
 .stt-header {
@@ -94,7 +86,7 @@
     margin: 0 0 4px;
     padding-bottom: 2px;
     border-bottom-width: 1px;
-    border-bottom-color: var(--stt-divider);
+    border-bottom-color: color-mix(in srgb, var(--stt-border) 60%, var(--stt-text-secondary));
 }
 
 .stt-scene-path {
@@ -131,7 +123,7 @@
 }
 
 .stt-empty-label {
-    -unity-text-align: middle-center;
+    text-align: center;
     padding: 8px;
     font-size: 11px;
     color: var(--stt-text-secondary);
@@ -193,14 +185,11 @@
 .stt-presets-row {
     flex-direction: row;
     margin-top: 6px;
+    gap: 4px;
 }
 
 .stt-preset-button {
     flex-grow: 1;
-}
-
-.stt-preset-button + .stt-preset-button {
-    margin-left: 4px;
 }
 
 .stt-preset-button:hover {
@@ -228,6 +217,7 @@
 .stt-batch-folder-row.stt-drag-over {
     background-color: var(--stt-accent-tint);
     border-width: 1px;
+    border-style: dashed;
     border-color: var(--stt-accent);
     padding: 2px;
 }
@@ -246,7 +236,7 @@
 }
 
 .stt-generate-button:hover {
-    background-color: var(--stt-accent-hover);
+    background-color: color-mix(in srgb, var(--stt-accent) 85%, white);
 }
 
 .stt-generate-folder-button {
@@ -258,7 +248,7 @@
 }
 
 .stt-generate-folder-button:hover {
-    background-color: var(--stt-secondary-hover);
+    background-color: color-mix(in srgb, var(--stt-secondary) 85%, white);
 }
 
 .stt-batch-progress {
