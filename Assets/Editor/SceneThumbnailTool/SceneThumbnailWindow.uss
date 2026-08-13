@@ -246,6 +246,16 @@
     background-color: color-mix(in srgb, var(--stt-secondary) 85%, white);
 }
 
+.stt-danger-button {
+    background-color: var(--stt-error);
+    color: #fff;
+    -unity-font-style: bold;
+}
+
+.stt-danger-button:hover {
+    background-color: color-mix(in srgb, var(--stt-error) 85%, white);
+}
+
 .stt-batch-progress {
     margin-top: 6px;
 }

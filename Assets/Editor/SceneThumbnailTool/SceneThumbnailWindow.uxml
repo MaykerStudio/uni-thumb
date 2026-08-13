@@ -20,6 +20,7 @@
                     <ui:Label name="preview-caption" class="stt-caption" />
                     <ui:Label name="stale-badge" text="stale" class="stt-badge stt-hidden" />
                 </ui:VisualElement>
+                <ui:Button name="delete-thumbnail-button" text="Delete Thumbnail" class="stt-danger-button stt-indented-button" tooltip="Deletes the thumbnail of the currently open scene" />
             </ui:VisualElement>
             <ui:VisualElement class="stt-card">
                 <ui:VisualElement class="stt-card-header-row">
@@ -75,6 +76,7 @@
                     <ui:Button name="browse-button" text="Browse..." tooltip="Open folder picker" />
                 </ui:VisualElement>
                 <ui:Button name="use-scene-folder-button" text="Use current scene's folder" class="stt-indented-button" tooltip="Set batch folder to current scene's directory" />
+                <ui:Button name="clear-folder-button" text="Clear Folder Thumbnails" class="stt-danger-button stt-indented-button" tooltip="Deletes thumbnails of all scenes in the batch folder (asks for confirmation)" />
                 <ui:Label name="batch-invalid-label" text="Not a project folder - pick a folder inside Assets/" class="stt-mini stt-error-text stt-hidden" />
                 <!-- Moved to stt-bottom-bar -->
                 <ui:VisualElement name="batch-progress" class="stt-batch-progress stt-hidden">

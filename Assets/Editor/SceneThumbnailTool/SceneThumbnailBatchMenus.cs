@@ -754,6 +754,17 @@ namespace MaykerStudio.SceneThumbnails
         }
 
         /// <summary>
+        /// Public wrapper over CollectFolderWork: every scene under the folder
+        /// (recursive FindAssets t:Scene, scoped, deduped, out-of-project entries
+        /// skipped). Used by the window's Clear Folder Thumbnails flow for counting
+        /// and deletion.
+        /// </summary>
+        public static List<string> CollectFolderScenePaths(string folderPath)
+        {
+            return CollectFolderWork(new List<string> { folderPath }, out _);
+        }
+
+        /// <summary>
         /// True when the scene path sits directly under the chosen folder (folder
         /// prefix + separator). Defensive: FindAssets scoping already implies it.
         /// </summary>

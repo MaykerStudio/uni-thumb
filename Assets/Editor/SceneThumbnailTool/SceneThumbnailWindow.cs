@@ -125,6 +125,7 @@ namespace MaykerStudio.SceneThumbnails
 
         private Label _activeSceneLabel;
         private Button _generateButton;
+        private Button _deleteThumbnailButton;
         private Label _generateBusyLabel;
         private Label _noThumbnailLabel;
         private VisualElement _previewBox;
@@ -155,6 +156,7 @@ namespace MaykerStudio.SceneThumbnails
         private Button _useSceneFolderButton;
         private Label _batchInvalidLabel;
         private Button _generateFolderButton;
+        private Button _clearFolderButton;
         private VisualElement _batchProgress;
         private ProgressBar _batchProgressBar;
         private Label _batchProgressCaption;
@@ -268,6 +270,8 @@ namespace MaykerStudio.SceneThumbnails
         {
             _activeSceneLabel = rootVisualElement.Q<Label>("active-scene-label");
             _generateButton = rootVisualElement.Q<Button>("generate-button");
+            _deleteThumbnailButton = rootVisualElement.Q<Button>("delete-thumbnail-button");
+            _clearFolderButton = rootVisualElement.Q<Button>("clear-folder-button");
             _generateBusyLabel = rootVisualElement.Q<Label>("generate-busy-label");
             _noThumbnailLabel = rootVisualElement.Q<Label>("no-thumbnail-label");
             _previewBox = rootVisualElement.Q<VisualElement>("preview-box");
@@ -338,6 +342,14 @@ namespace MaykerStudio.SceneThumbnails
             if (_generateButton != null)
             {
                 _generateButton.clicked += GenerateThumbnail;
+            }
+            if (_deleteThumbnailButton != null)
+            {
+                _deleteThumbnailButton.clicked += DeleteActiveSceneThumbnail;
+            }
+            if (_clearFolderButton != null)
+            {
+                _clearFolderButton.clicked += ClearFolderThumbnails;
             }
             if (_resolutionPopup != null)
             {
@@ -609,6 +621,10 @@ namespace MaykerStudio.SceneThumbnails
             if (_generateButton != null)
             {
                 _generateButton.SetEnabled(!busy);
+            }
+            if (_deleteThumbnailButton != null)
+            {
+                _deleteThumbnailButton.SetEnabled(!busy);
             }
             if (_generateBusyLabel != null)
             {
@@ -1064,6 +1080,10 @@ namespace MaykerStudio.SceneThumbnails
             {
                 _generateFolderButton.SetEnabled(!busy && _folderValid);
             }
+            if (_clearFolderButton != null)
+            {
+                _clearFolderButton.SetEnabled(!busy && _folderValid);
+            }
             if (_batchProgress != null)
             {
                 _batchProgress.EnableInClassList("stt-hidden", !running);
@@ -1237,6 +1257,10 @@ namespace MaykerStudio.SceneThumbnails
             if (_generateFolderButton != null)
             {
                 _generateFolderButton.SetEnabled(!busy && _folderValid);
+            }
+            if (_clearFolderButton != null)
+            {
+                _clearFolderButton.SetEnabled(!busy && _folderValid);
             }
             if (_batchInvalidLabel != null)
             {
@@ -1618,6 +1642,135 @@ namespace MaykerStudio.SceneThumbnails
                 SceneThumbnailGuard.Exit();
             }
             UpdateGenerateState();
+            UpdatePreviewUI();
+        }
+
+        private void DeleteActiveSceneThumbnail()
+        {
+            string scenePath = EditorSceneManager.GetActiveScene().path;
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                SetStatus(
+                    "Cannot delete: no saved active scene. Save the scene first.",
+                    MessageType.Warning
+                );
+                return;
+            }
+            if (!SceneThumbnailGuard.TryEnter())
+            {
+                SetStatus("A thumbnail generation is already in progress.", MessageType.Warning);
+                return;
+            }
+            try
+            {
+                bool deleted = SceneThumbnailStorage.Delete(scenePath);
+                SceneThumbnailIconService.ClearIcon(scenePath);
+                string sceneName = Path.GetFileNameWithoutExtension(scenePath);
+                SetStatus(
+                    deleted
+                        ? "Deleted thumbnail for '" + sceneName + "'."
+                        : "No thumbnail to delete for '" + sceneName + "'.",
+                    deleted ? MessageType.Info : MessageType.Info
+                );
+            }
+            finally
+            {
+                SceneThumbnailGuard.Exit();
+            }
+            _previewTexture = null;
+            _previewStale = false;
+            UpdateGenerateState();
+            UpdatePreviewUI();
+        }
+
+        private void ClearFolderThumbnails()
+        {
+            if (!_folderValid || string.IsNullOrEmpty(_batchFolderPath))
+            {
+                SetStatus("Pick a valid batch folder first.", MessageType.Warning);
+                return;
+            }
+            List<string> scenes = SceneThumbnailBatchMenus.CollectFolderScenePaths(
+                _batchFolderPath
+            );
+            List<string> targets = new List<string>();
+            for (int i = 0; i < scenes.Count; i++)
+            {
+                if (SceneThumbnailStorage.HasThumbnail(scenes[i]))
+                {
+                    targets.Add(scenes[i]);
+                }
+            }
+            if (targets.Count == 0)
+            {
+                SetStatus(
+                    "No thumbnails to clear in '" + _batchFolderPath + "'.",
+                    MessageType.Info
+                );
+                return;
+            }
+            bool confirmed = EditorUtility.DisplayDialog(
+                "Clear Folder Thumbnails",
+                "Delete "
+                    + targets.Count
+                    + " thumbnail(s) for scenes under '"
+                    + _batchFolderPath
+                    + "'? This cannot be undone.",
+                "Delete",
+                "Cancel"
+            );
+            if (!confirmed)
+            {
+                SetStatus("Folder thumbnail clear cancelled.", MessageType.Info);
+                return;
+            }
+            if (!SceneThumbnailGuard.TryEnter())
+            {
+                SetStatus("A thumbnail generation is already in progress.", MessageType.Warning);
+                return;
+            }
+            int deleted = 0;
+            try
+            {
+                for (int i = 0; i < targets.Count; i++)
+                {
+                    if (SceneThumbnailStorage.Delete(targets[i]))
+                    {
+                        deleted++;
+                    }
+                }
+                SceneThumbnailIconService.ReapplyAllIcons();
+                SetStatus(
+                    "Deleted "
+                        + deleted
+                        + " of "
+                        + targets.Count
+                        + " thumbnails in '"
+                        + _batchFolderPath
+                        + "'.",
+                    deleted == targets.Count ? MessageType.Info : MessageType.Warning
+                );
+            }
+            finally
+            {
+                SceneThumbnailGuard.Exit();
+            }
+            ResetActiveScenePreview();
+            UpdateGenerateState();
+            UpdateBatchUI();
+        }
+
+        private void ResetActiveScenePreview()
+        {
+            _previewTexture = null;
+            _previewGuid = null;
+            _previewStale = false;
+            string scenePath = EditorSceneManager.GetActiveScene().path;
+            if (!string.IsNullOrEmpty(scenePath))
+            {
+                _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
+                SceneThumbnailStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
+            }
             UpdatePreviewUI();
         }
 
