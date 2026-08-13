@@ -249,6 +249,7 @@ namespace MaykerStudio.SceneThumbnails
 
             CacheElements();
             WireCallbacks();
+            ApplySectionIcons();
             _wasBatchRunning = SceneThumbnailBatchMenus.IsBatchRunning;
             PushState();
         }
@@ -309,6 +310,32 @@ namespace MaykerStudio.SceneThumbnails
             _batchResultHelp = rootVisualElement.Q<HelpBox>("batch-result-help");
             _statusHelp = rootVisualElement.Q<HelpBox>("status-help");
             _footerLabel = rootVisualElement.Q<Label>("footer-label");
+        }
+
+        private void ApplySectionIcons()
+        {
+            SetSectionIcon("stt-icon-preview", "d_SceneAsset Icon");
+            SetSectionIcon("stt-icon-resolution", "d_Settings Icon");
+            SetSectionIcon("stt-icon-framing", "d_Camera Icon");
+            SetSectionIcon("stt-icon-bgfx", "d_Skybox Icon");
+            SetSectionIcon("stt-icon-layers", "d_TagManager Icon");
+            SetSectionIcon("stt-icon-batch", "d_FolderOpened Icon");
+        }
+
+        private void SetSectionIcon(string elementName, string iconName)
+        {
+            Image icon = rootVisualElement.Q<Image>(elementName);
+            if (icon == null)
+            {
+                return;
+            }
+            GUIContent content = EditorGUIUtility.IconContent(iconName);
+            if (content == null || content.image == null)
+            {
+                return;
+            }
+            icon.image = content.image;
+            icon.EnableInClassList("stt-hidden", false);
         }
 
         private void WireCallbacks()
@@ -476,18 +503,6 @@ namespace MaykerStudio.SceneThumbnails
         {
             UpdateActiveSceneLabel();
             UpdateGenerateState();
-
-            // Constrain preview to fixed size for docked right panel
-            if (_previewBox != null)
-            {
-                _previewBox.style.width = 96;
-                _previewBox.style.height = 96;
-            }
-            if (_previewImage != null)
-            {
-                _previewImage.style.width = 96;
-                _previewImage.style.height = 96;
-            }
 
             if (_resolutionPopup != null)
             {
@@ -1008,11 +1023,6 @@ namespace MaykerStudio.SceneThumbnails
             if (_previewImage != null)
             {
                 _previewImage.image = hasPreview ? _previewTexture : null;
-                if (hasPreview)
-                {
-                    _previewImage.style.width = 96;
-                    _previewImage.style.height = 96;
-                }
             }
             if (_previewCaptionRow != null)
             {

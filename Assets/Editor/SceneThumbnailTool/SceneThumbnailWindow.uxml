@@ -5,23 +5,34 @@
             <ui:Label name="active-scene-label" class="stt-scene-path" tooltip="Scene captured by Generate; must be saved first" />
         </ui:VisualElement>
         <ui:ScrollView name="settings-scroll" class="stt-scroll" mode="Vertical" vertical-scroller-visibility="Auto" horizontal-scroller-visibility="Hidden" view-data-key="stt-settings-scroll">
-            <ui:VisualElement class="stt-section">
-                <ui:Label text="Preview" class="stt-section-header" />
+            <ui:VisualElement class="stt-card">
+                <ui:VisualElement class="stt-card-header-row">
+                    <ui:Image name="stt-icon-preview" class="stt-section-icon stt-hidden" />
+                    <ui:Label text="Preview" class="stt-section-header" />
+                </ui:VisualElement>
                 <ui:Label name="no-thumbnail-label" text="No thumbnail yet - press Generate Thumbnail" class="stt-empty-label" />
-                <ui:VisualElement name="preview-box" class="stt-preview-box stt-hidden">
-                    <ui:Image name="preview-image" class="stt-preview-image" scale-mode="ScaleToFit" />
+                <ui:VisualElement name="preview-wrap" class="stt-preview-wrap">
+                    <ui:VisualElement name="preview-box" class="stt-preview-box stt-hidden">
+                        <ui:Image name="preview-image" class="stt-preview-image" scale-mode="ScaleToFit" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="preview-caption-row" class="stt-caption-row stt-hidden">
                     <ui:Label name="preview-caption" class="stt-caption" />
                     <ui:Label name="stale-badge" text="stale" class="stt-badge stt-hidden" />
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:VisualElement class="stt-section">
-                <ui:Label text="Resolution" class="stt-section-header" />
+            <ui:VisualElement class="stt-card">
+                <ui:VisualElement class="stt-card-header-row">
+                    <ui:Image name="stt-icon-resolution" class="stt-section-icon stt-hidden" />
+                    <ui:Label text="Resolution" class="stt-section-header" />
+                </ui:VisualElement>
                 <ui:DropdownField name="resolution-popup" label="Resolution" tooltip="Output pixel size; Custom allows up to 4096" />
             </ui:VisualElement>
-            <ui:VisualElement class="stt-section">
-                <ui:Label text="Framing" class="stt-section-header" />
+            <ui:VisualElement class="stt-card">
+                <ui:VisualElement class="stt-card-header-row">
+                    <ui:Image name="stt-icon-framing" class="stt-section-icon stt-hidden" />
+                    <ui:Label text="Framing" class="stt-section-header" />
+                </ui:VisualElement>
                 <ui:Toggle name="orthographic-toggle" label="Orthographic (2D)" tooltip="Capture with an orthographic camera (2D games)" />
                 <ui:Toggle name="sceneview-angle-toggle" label="Use current Scene View angle" tooltip="When off, orbit yaw/pitch below drive the capture camera." />
                 <ui:Slider name="framing-distance-slider" label="Framing Distance" low-value="0.25" high-value="4" value="1" tooltip="Multiplier of the auto-fit framing distance; the zoom control in orthographic (2D) mode." />
@@ -36,19 +47,26 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
-            <ui:Foldout name="bg-effects-foldout" text="Background &amp; Effects" class="stt-section stt-foldout" toggle-on-label-click="true" view-data-key="stt-bg-effects-foldout">
+            <ui:Foldout name="bg-effects-foldout" text="Background &amp; Effects" class="stt-card stt-foldout" toggle-on-label-click="true" view-data-key="stt-bg-effects-foldout">
+                <ui:Image name="stt-icon-bgfx" class="stt-section-icon stt-hidden" />
                 <ui:EnumField name="bg-mode-field" label="Mode" tooltip="Skybox renders RenderSettings.skybox; Solid Color clears to color" />
                 <uie:ColorField name="bg-color-field" label="Background color" show-alpha="true" tooltip="Background color only applies in Solid Color mode" />
                 <ui:Label name="bg-color-hint" text="Background color only applies in Solid Color mode." class="stt-mini stt-hint stt-hidden" />
                 <ui:Toggle name="lighting-toggle" label="Disable scene lighting" tooltip="Temporarily disables all lights during capture." />
                 <ui:Toggle name="postfx-toggle" label="Post-processing (Volume effects)" tooltip="Renders URP Volume effects (tonemapping, bloom, vignette) into the thumbnail." />
             </ui:Foldout>
-            <ui:VisualElement class="stt-section">
-                <ui:Label text="Layers" class="stt-section-header" />
+            <ui:VisualElement class="stt-card">
+                <ui:VisualElement class="stt-card-header-row">
+                    <ui:Image name="stt-icon-layers" class="stt-section-icon stt-hidden" />
+                    <ui:Label text="Layers" class="stt-section-header" />
+                </ui:VisualElement>
                 <uie:MaskField name="layers-mask" label="Include Layers" tooltip="Layers rendered into the thumbnail; the capture camera culling mask (Everything by default)." />
             </ui:VisualElement>
-            <ui:VisualElement class="stt-section">
-                <ui:Label text="Batch" class="stt-section-header" />
+            <ui:VisualElement class="stt-card">
+                <ui:VisualElement class="stt-card-header-row">
+                    <ui:Image name="stt-icon-batch" class="stt-section-icon stt-hidden" />
+                    <ui:Label text="Batch" class="stt-section-header" />
+                </ui:VisualElement>
                 <ui:VisualElement name="batch-folder-row" class="stt-batch-folder-row">
                     <ui:TextField name="batch-folder-field" label="Batch folder" class="stt-batch-folder-field" tooltip="Project folder scanned recursively for scenes" />
                     <ui:Button name="browse-button" text="Browse..." tooltip="Open folder picker" />
