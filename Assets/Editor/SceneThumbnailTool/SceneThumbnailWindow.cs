@@ -49,7 +49,7 @@ namespace MaykerStudio.SceneThumbnails
         #region Fields
 
         [SerializeField]
-        private int _resolutionIndex = 1;
+        private int _resolutionIndex = 3;
 
         [SerializeField]
         private bool _useSceneViewAngle = true;
