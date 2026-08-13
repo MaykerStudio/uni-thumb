@@ -82,9 +82,6 @@ namespace MaykerStudio.SceneThumbnails
         private LayerMask _layerMask = -1;
 
         [SerializeField]
-        private bool _backgroundEffectsFoldout = true;
-
-        [SerializeField]
         private string _batchFolderInput;
 
         [SerializeField]
@@ -146,7 +143,6 @@ namespace MaykerStudio.SceneThumbnails
         private Button _presetFrontButton;
         private Button _presetThreequarterButton;
         private Button _presetTopButton;
-        private Foldout _bgEffectsFoldout;
         private EnumField _bgModeField;
         private ColorField _bgColorField;
         private Label _bgColorHint;
@@ -290,7 +286,6 @@ namespace MaykerStudio.SceneThumbnails
             _presetFrontButton = rootVisualElement.Q<Button>("preset-front-button");
             _presetThreequarterButton = rootVisualElement.Q<Button>("preset-threequarter-button");
             _presetTopButton = rootVisualElement.Q<Button>("preset-top-button");
-            _bgEffectsFoldout = rootVisualElement.Q<Foldout>("bg-effects-foldout");
             _bgModeField = rootVisualElement.Q<EnumField>("bg-mode-field");
             _bgColorField = rootVisualElement.Q<ColorField>("bg-color-field");
             _bgColorHint = rootVisualElement.Q<Label>("bg-color-hint");
@@ -317,47 +312,9 @@ namespace MaykerStudio.SceneThumbnails
             SetSectionIcon("stt-icon-preview", "d_SceneAsset Icon");
             SetSectionIcon("stt-icon-resolution", "d_Settings Icon");
             SetSectionIcon("stt-icon-framing", "d_Camera Icon");
+            SetSectionIcon("stt-icon-bgfx", "d_Skybox Icon");
             SetSectionIcon("stt-icon-layers", "d_TagManager Icon");
             SetSectionIcon("stt-icon-batch", "d_FolderOpened Icon");
-
-            Foldout bgfx = rootVisualElement.Q<Foldout>("bg-effects-foldout");
-            ApplyFoldoutIcon(bgfx, "d_Skybox Icon");
-        }
-
-        private void ApplyFoldoutIcon(Foldout foldout, string iconName)
-        {
-            if (foldout == null)
-            {
-                return;
-            }
-            Toggle headerToggle = foldout.Q<Toggle>();
-            if (headerToggle == null || headerToggle.childCount == 0)
-            {
-                return;
-            }
-            VisualElement input = headerToggle[0];
-            if (input == null || input.childCount < 2)
-            {
-                return;
-            }
-            VisualElement headerLabel = input[1];
-            if (headerLabel == null)
-            {
-                return;
-            }
-            GUIContent content = EditorGUIUtility.IconContent(iconName);
-            if (content == null || content.image == null)
-            {
-                return;
-            }
-            Image icon = new Image
-            {
-                image = content.image,
-                name = "stt-icon-bgfx",
-                pickingMode = PickingMode.Ignore
-            };
-            icon.AddToClassList("stt-section-icon");
-            input.Insert(input.IndexOf(headerLabel), icon);
         }
 
         private void SetSectionIcon(string elementName, string iconName)
@@ -451,13 +408,6 @@ namespace MaykerStudio.SceneThumbnails
                     ApplyOrbitPreset(0f, 85f);
                     MarkPreviewDirty();
                 };
-            }
-            if (_bgEffectsFoldout != null)
-            {
-                _bgEffectsFoldout.RegisterValueChangedCallback(evt =>
-                {
-                    _backgroundEffectsFoldout = evt.newValue;
-                });
             }
             if (_bgModeField != null)
             {
@@ -574,10 +524,6 @@ namespace MaykerStudio.SceneThumbnails
             }
             UpdateFramingState();
 
-            if (_bgEffectsFoldout != null)
-            {
-                _bgEffectsFoldout.SetValueWithoutNotify(_backgroundEffectsFoldout);
-            }
             if (_bgModeField != null)
             {
                 // UXML EnumFields are untyped until Init; Init also sets the

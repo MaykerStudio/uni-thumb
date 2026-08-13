@@ -196,18 +196,7 @@
     background-color: var(--stt-accent-tint);
 }
 
-.stt-foldout {
-    border-top-width: 0;
-    border-top-color: var(--stt-border);
-    margin-top: 2px;
-    padding-top: 0;
-}
 
-.stt-foldout .stt-section-icon {
-    width: 14px;
-    height: 14px;
-    margin-right: 4px;
-}
 
 .stt-batch-folder-row {
     flex-direction: row;
