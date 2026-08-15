@@ -4,21 +4,20 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
-    /// Searchable folder picker shown by SceneThumbnailWindow's Browse button.
+    /// Searchable folder picker shown by UniThumbWindow's Browse button.
     /// Lightweight drop-down EditorWindow (Add-Component style): a search field
     /// on top and one button per project folder below. Anchored with
     /// ShowAsDropDown so it closes on outside click; also closes on selection
-    /// or Escape. Reuses SceneThumbnailWindow.uss for row/search styling.
+    /// or Escape. Reuses UniThumbWindow.uss for row/search styling.
     /// </summary>
-    public class SceneThumbnailFolderMenu : EditorWindow
+    public class UniThumbFolderMenu : EditorWindow
     {
         #region Constants
 
-        private const string k_UssPath =
-            "Assets/Editor/SceneThumbnailTool/SceneThumbnailWindow.uss";
+        private const string k_UssPath = "Assets/Editor/UniThumb/UniThumbWindow.uss";
         private const string k_SearchPlaceholder = "Search folders...";
         private const string k_NoMatchLabel = "No folders match";
         private const string k_EmptyListLabel = "No folders";
@@ -50,7 +49,7 @@ namespace MaykerStudio.SceneThumbnails
             Action<string> onSelected
         )
         {
-            SceneThumbnailFolderMenu window = CreateInstance<SceneThumbnailFolderMenu>();
+            UniThumbFolderMenu window = CreateInstance<UniThumbFolderMenu>();
             window.titleContent = new GUIContent("Select Scene Folder");
             window._folderPaths = folderPaths;
             window._onSelected = onSelected;

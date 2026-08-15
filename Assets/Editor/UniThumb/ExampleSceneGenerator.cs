@@ -7,19 +7,19 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// Editor utility that generates 10 diverse example scenes for testing the
-    /// SceneThumbnailTool. Each scene has unique content covering different
+    /// UniThumb. Each scene has unique content covering different
     /// thumbnail scenarios: lighting, color, camera angles, UI, particles, etc.
-    /// Accessible via Tools > Scene Thumbnail Generator > Generate Example Scenes.
+    /// Accessible via Tools > UniThumb > Generate Example Scenes.
     /// </summary>
     public static class ExampleSceneGenerator
     {
         #region Constants
 
-        private const string k_MenuPath = "Tools/Scene Thumbnail Generator/Generate Example Scenes";
+        private const string k_MenuPath = "Tools/UniThumb/Generate Example Scenes";
         private const string k_ScenesFolder = "Assets/Scenes";
         private const int k_MenuPriority = 1000;
         private const int k_SceneCount = 10;
@@ -68,7 +68,7 @@ namespace MaykerStudio.SceneThumbnails
                 RestoreOriginalScene(originalScenePath);
                 EditorUtility.DisplayProgressBar("Generating Example Scenes", "Done", 1f);
                 Debug.Log(
-                    "[SceneThumbnailTool] Generated "
+                    "[UniThumb] Generated "
                         + k_SceneCount
                         + " example scenes in "
                         + k_ScenesFolder
@@ -78,7 +78,7 @@ namespace MaykerStudio.SceneThumbnails
             catch (Exception exception)
             {
                 Debug.LogException(exception);
-                Debug.LogError("[SceneThumbnailTool] Example scene generation failed.");
+                Debug.LogError("[UniThumb] Example scene generation failed.");
             }
             finally
             {
@@ -625,7 +625,7 @@ namespace MaykerStudio.SceneThumbnails
                 return urpShader;
             }
             Debug.LogWarning(
-                "[SceneThumbnailTool] URP Lit shader not found. Falling back to Standard shader."
+                "[UniThumb] URP Lit shader not found. Falling back to Standard shader."
             );
             return Shader.Find("Standard");
         }
@@ -700,7 +700,7 @@ namespace MaykerStudio.SceneThumbnails
             catch (Exception exception)
             {
                 Debug.LogWarning(
-                    "[SceneThumbnailTool] Could not restore previous scene: " + exception.Message
+                    "[UniThumb] Could not restore previous scene: " + exception.Message
                 );
             }
         }

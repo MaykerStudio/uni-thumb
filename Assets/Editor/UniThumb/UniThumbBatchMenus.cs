@@ -6,7 +6,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// Manual-only integration: context menus (Generate / Clear / Refresh All /
@@ -15,7 +15,7 @@ namespace MaykerStudio.SceneThumbnails
     /// capture entry points in the tool — there are zero asset/scene hooks
     /// (no OnPostprocessAllAssets, no EditorSceneManager.sceneSaving/sceneSaved),
     /// so nothing ever generates automatically. Every handler enters the shared
-    /// SceneThumbnailGuard (M2, manual paths) to prevent double-trigger from
+    /// UniThumbGuard (M2, manual paths) to prevent double-trigger from
     /// multi-select context menu clicks.
     ///
     /// Batch (Refresh All) is two-pass: pass 1 captures + saves + verifies every
@@ -24,14 +24,14 @@ namespace MaykerStudio.SceneThumbnails
     /// render never samples half-compiled URP variants), pass 2 applies icons
     /// for verified PNGs only. Refresh All
     /// regenerates ONLY explicitly requested scenes: stale (missing/outdated per
-    /// SceneThumbnailStorage invalidation) or the user-selected scene — never
+    /// UniThumbStorage invalidation) or the user-selected scene — never
     /// unrequested scenes. The folder batch regenerates EVERY scene under the
     /// selected folders (an explicit request, not stale-only) and reuses the
     /// same two-pass pump. Scenes outside the project (Packages/ etc.) are
     /// skipped with a warning, never captured. The active scene is switched per
     /// target scene and the original scene is restored when the batch finishes.
     /// </summary>
-    public static class SceneThumbnailBatchMenus
+    public static class UniThumbBatchMenus
     {
         #region Batch Snapshot
 
@@ -56,18 +56,17 @@ namespace MaykerStudio.SceneThumbnails
 
         #region Constants
 
-        private const string k_LogPrefix = "[SceneThumbnailTool] ";
-        private const string k_GenerateMenuPath = "Assets/Generate Scene Thumbnail";
-        private const string k_ClearMenuPath = "Assets/Clear Scene Thumbnail";
-        private const string k_RefreshAllMenuPath = "Assets/Refresh All Scene Thumbnails";
-        private const string k_GenerateFolderMenuPath =
-            "Assets/Generate Scene Thumbnails in Folder";
+        private const string k_LogPrefix = "[UniThumb] ";
+        private const string k_GenerateMenuPath = "Assets/Generate UniThumb";
+        private const string k_ClearMenuPath = "Assets/Clear UniThumb";
+        private const string k_RefreshAllMenuPath = "Assets/Refresh All UniThumbs";
+        private const string k_GenerateFolderMenuPath = "Assets/Generate UniThumbs in Folder";
         private const int k_GenerateMenuPriority = 1100;
         private const int k_ClearMenuPriority = 1101;
         private const int k_RefreshAllMenuPriority = 1102;
         private const int k_GenerateFolderMenuPriority = 1103;
         private const string k_FolderBatchKind = "Folder";
-        private const string k_ProgressTitle = "Scene Thumbnails";
+        private const string k_ProgressTitle = "UniThumb";
         private const string k_ProgressMessageFormat = "Generating thumbnail for '{0}'...";
         private const string k_ShaderCompileProgressMessageFormat =
             "Compiling shaders for '{0}'...";
@@ -81,11 +80,11 @@ namespace MaykerStudio.SceneThumbnails
         // Bulk generation cap (t11/AC-M19): menu + batch capture paths may never
         // request more than 2048px (a 4096px bulk run would blow the cache cap).
         // Single-scene window captures keep their 4096px ceiling (k_MaxResolution
-        // in SceneThumbnailCapture). Batch defaults are 512px, so this guard is
+        // in UniThumbCapture). Batch defaults are 512px, so this guard is
         // defensive - it must exist and be provable.
         private const int k_MaxBulkResolution = 2048;
 
-        // Mirror of SceneThumbnailStorage's invalidation key schema (k_PrefsPrefix
+        // Mirror of UniThumbStorage's invalidation key schema (k_PrefsPrefix
         // + "." + sceneGuid). Storage owns the schema; this copy lets Refresh All
         // decide staleness (outdated = scene LastWriteTimeUtc != stored ticks)
         // without touching storage internals. v3: bumped when CaptureUi defaulted
@@ -219,7 +218,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             if (
                 !ConfirmBatchStart(
-                    "Generate Scene Thumbnails",
+                    "Generate UniThumbs",
                     "Generate thumbnails for " + work.Count + " scene(s) in '" + folderPath + "'?",
                     "Generate"
                 )
@@ -229,7 +228,7 @@ namespace MaykerStudio.SceneThumbnails
                 return false;
             }
 
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 error = "Another thumbnail generation is already in progress.";
                 return false;
@@ -264,24 +263,24 @@ namespace MaykerStudio.SceneThumbnails
                 // guard until CancelBatchState; non-pump exits release it here.
                 if (!pumpStarted)
                 {
-                    SceneThumbnailGuard.Exit();
+                    UniThumbGuard.Exit();
                 }
             }
         }
 
         [MenuItem(k_GenerateMenuPath, false, k_GenerateMenuPriority)]
-        public static void GenerateSceneThumbnail()
+        public static void GenerateUniThumb()
         {
             string scenePath;
             if (!TryGetSelectedScenePath(out scenePath))
             {
                 Debug.LogWarning(
-                    k_LogPrefix + "Generate Scene Thumbnail refused: select a SceneAsset first."
+                    k_LogPrefix + "Generate UniThumb refused: select a SceneAsset first."
                 );
                 return;
             }
 
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 Debug.LogWarning(
                     k_LogPrefix
@@ -310,7 +309,7 @@ namespace MaykerStudio.SceneThumbnails
                     return;
                 }
 
-                if (!SceneThumbnailStorage.Save(scenePath, result.PngBytes))
+                if (!UniThumbStorage.Save(scenePath, result.PngBytes))
                 {
                     Debug.LogWarning(
                         k_LogPrefix
@@ -321,7 +320,7 @@ namespace MaykerStudio.SceneThumbnails
                     return;
                 }
 
-                SceneThumbnailIconService.ApplyIcon(scenePath);
+                UniThumbIconService.ApplyIcon(scenePath);
                 string suffix = string.IsNullOrEmpty(result.Warning)
                     ? "."
                     : " (warning: " + result.Warning + ")";
@@ -329,29 +328,29 @@ namespace MaykerStudio.SceneThumbnails
             }
             finally
             {
-                SceneThumbnailGuard.Exit();
+                UniThumbGuard.Exit();
             }
         }
 
         [MenuItem(k_GenerateMenuPath, true, k_GenerateMenuPriority)]
-        private static bool ValidateGenerateSceneThumbnail()
+        private static bool ValidateGenerateUniThumb()
         {
             return IsSceneAssetSelected();
         }
 
         [MenuItem(k_ClearMenuPath, false, k_ClearMenuPriority)]
-        public static void ClearSceneThumbnail()
+        public static void ClearUniThumb()
         {
             string scenePath;
             if (!TryGetSelectedScenePath(out scenePath))
             {
                 Debug.LogWarning(
-                    k_LogPrefix + "Clear Scene Thumbnail refused: select a SceneAsset first."
+                    k_LogPrefix + "Clear UniThumb refused: select a SceneAsset first."
                 );
                 return;
             }
 
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 Debug.LogWarning(
                     k_LogPrefix
@@ -362,8 +361,8 @@ namespace MaykerStudio.SceneThumbnails
 
             try
             {
-                bool deleted = SceneThumbnailStorage.Delete(scenePath);
-                SceneThumbnailIconService.ClearIcon(scenePath);
+                bool deleted = UniThumbStorage.Delete(scenePath);
+                UniThumbIconService.ClearIcon(scenePath);
                 string message = deleted
                     ? "Cleared thumbnail for '"
                     : "No thumbnail to clear for '";
@@ -371,24 +370,24 @@ namespace MaykerStudio.SceneThumbnails
             }
             finally
             {
-                SceneThumbnailGuard.Exit();
+                UniThumbGuard.Exit();
             }
         }
 
         [MenuItem(k_ClearMenuPath, true, k_ClearMenuPriority)]
-        private static bool ValidateClearSceneThumbnail()
+        private static bool ValidateClearUniThumb()
         {
             return IsSceneAssetSelected();
         }
 
         [MenuItem(k_RefreshAllMenuPath, false, k_RefreshAllMenuPriority)]
-        public static void RefreshAllSceneThumbnails()
+        public static void RefreshAllUniThumbs()
         {
             // Confirmation gate before the guard: a cancelled dialog must leave
             // the guard free and no pump scheduled.
             if (
                 !ConfirmBatchStart(
-                    "Refresh All Scene Thumbnails",
+                    "Refresh All UniThumbs",
                     "Regenerate thumbnails for all scenes?",
                     "Regenerate"
                 )
@@ -398,7 +397,7 @@ namespace MaykerStudio.SceneThumbnails
                 return;
             }
 
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 Debug.LogWarning(
                     k_LogPrefix
@@ -438,20 +437,20 @@ namespace MaykerStudio.SceneThumbnails
                 // non-pump exits release it here.
                 if (!pumpStarted)
                 {
-                    SceneThumbnailGuard.Exit();
+                    UniThumbGuard.Exit();
                 }
             }
         }
 
         [MenuItem(k_GenerateFolderMenuPath, false, k_GenerateFolderMenuPriority)]
-        public static void GenerateFolderSceneThumbnails()
+        public static void GenerateFolderUniThumbs()
         {
             List<string> folders = CollectSelectedFolders();
             if (folders.Count == 0)
             {
                 Debug.LogWarning(
                     k_LogPrefix
-                        + "Generate Scene Thumbnails in Folder refused: select a folder in the Project window first."
+                        + "Generate UniThumbs in Folder refused: select a folder in the Project window first."
                 );
                 return;
             }
@@ -478,7 +477,7 @@ namespace MaykerStudio.SceneThumbnails
                 folders.Count == 1 ? "'" + folders[0] + "'" : folders.Count + " selected folders";
             if (
                 !ConfirmBatchStart(
-                    "Generate Scene Thumbnails",
+                    "Generate UniThumbs",
                     "Generate thumbnails for " + work.Count + " scene(s) in " + folderLabel + "?",
                     "Generate"
                 )
@@ -488,7 +487,7 @@ namespace MaykerStudio.SceneThumbnails
                 return;
             }
 
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 Debug.LogWarning(
                     k_LogPrefix
@@ -520,13 +519,13 @@ namespace MaykerStudio.SceneThumbnails
                 // until CompleteBatch/AbortBatch -> CancelBatchState.
                 if (!pumpStarted)
                 {
-                    SceneThumbnailGuard.Exit();
+                    UniThumbGuard.Exit();
                 }
             }
         }
 
         [MenuItem(k_GenerateFolderMenuPath, true, k_GenerateFolderMenuPriority)]
-        private static bool ValidateGenerateFolderSceneThumbnails()
+        private static bool ValidateGenerateFolderUniThumbs()
         {
             return HasValidFolderSelection();
         }
@@ -662,8 +661,8 @@ namespace MaykerStudio.SceneThumbnails
 
             try
             {
-                return SceneThumbnailCapture.Capture(
-                    ClampBulkResolution(SceneThumbnailCapture.GetLastSettingsOrDefault())
+                return UniThumbCapture.Capture(
+                    ClampBulkResolution(UniThumbCapture.GetLastSettingsOrDefault())
                 );
             }
             finally
@@ -848,11 +847,11 @@ namespace MaykerStudio.SceneThumbnails
         /// <summary>
         /// True when the scene has no thumbnail in storage (missing) or its
         /// LastWriteTimeUtc no longer matches the ticks recorded at save time
-        /// (outdated per SceneThumbnailStorage invalidation).
+        /// (outdated per UniThumbStorage invalidation).
         /// </summary>
         private static bool IsStale(string scenePath)
         {
-            if (!SceneThumbnailStorage.HasThumbnail(scenePath))
+            if (!UniThumbStorage.HasThumbnail(scenePath))
             {
                 return true;
             }
@@ -900,7 +899,7 @@ namespace MaykerStudio.SceneThumbnails
         /// Confirmation gate before any batch generation starts (folder batch
         /// menu, Refresh All menu, window folder button). Same idiom as the
         /// Clear Folder Thumbnails dialog. Callers invoke it BEFORE
-        /// SceneThumbnailGuard.TryEnter so a cancelled dialog leaves the guard
+        /// UniThumbGuard.TryEnter so a cancelled dialog leaves the guard
         /// free and no pump scheduled.
         /// </summary>
         private static bool ConfirmBatchStart(string title, string message, string confirm)
@@ -916,7 +915,7 @@ namespace MaykerStudio.SceneThumbnails
         {
             // Snapshot once at pump start: ProcessSceneCapture must not re-read
             // the store per scene (prevents mid-batch drift from UI edits).
-            s_BatchSettings = SceneThumbnailCapture.GetLastSettingsOrDefault();
+            s_BatchSettings = UniThumbCapture.GetLastSettingsOrDefault();
             s_PendingScenes = new Queue<string>(work);
             s_SucceededScenes = new List<string>();
             s_FailedScenes = new List<string>();
@@ -1032,7 +1031,7 @@ namespace MaykerStudio.SceneThumbnails
         {
             try
             {
-                CaptureResult result = SceneThumbnailCapture.Capture(
+                CaptureResult result = UniThumbCapture.Capture(
                     ClampBulkResolution(s_BatchSettings)
                 );
                 if (!result.Success)
@@ -1048,7 +1047,7 @@ namespace MaykerStudio.SceneThumbnails
                     return;
                 }
 
-                if (!SceneThumbnailStorage.Save(scenePath, result.PngBytes))
+                if (!UniThumbStorage.Save(scenePath, result.PngBytes))
                 {
                     s_FailedScenes.Add(scenePath);
                     Debug.LogWarning(
@@ -1065,7 +1064,7 @@ namespace MaykerStudio.SceneThumbnails
                 // LoadImage in the common path); the dropped reference is cache-owned
                 // and destroyed on eviction (Save/Delete/staleness) or the
                 // domain-reload clear - never a transient texture, never a leak.
-                if (SceneThumbnailStorage.Load(scenePath) == null)
+                if (UniThumbStorage.Load(scenePath) == null)
                 {
                     s_FailedScenes.Add(scenePath);
                     Debug.LogWarning(
@@ -1189,7 +1188,7 @@ namespace MaykerStudio.SceneThumbnails
             {
                 foreach (string scenePath in s_SucceededScenes)
                 {
-                    SceneThumbnailIconService.ApplyIcon(scenePath);
+                    UniThumbIconService.ApplyIcon(scenePath);
                 }
                 string summary =
                     k_LogPrefix
@@ -1224,7 +1223,7 @@ namespace MaykerStudio.SceneThumbnails
             {
                 foreach (string scenePath in s_SucceededScenes)
                 {
-                    SceneThumbnailIconService.ApplyIcon(scenePath);
+                    UniThumbIconService.ApplyIcon(scenePath);
                 }
 
                 string summary;
@@ -1328,7 +1327,7 @@ namespace MaykerStudio.SceneThumbnails
                 s_CancelRequested = false;
                 s_WaitingForShaderCompile = false;
                 s_WaitStartedAt = 0.0;
-                SceneThumbnailGuard.Exit();
+                UniThumbGuard.Exit();
             }
         }
 

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// Applies scene thumbnails as Project window icons through a single overlay
@@ -15,14 +15,14 @@ namespace MaykerStudio.SceneThumbnails
     /// EditorApplication.projectWindowItemOnGUI overlay on every version. ZERO meta
     /// writes: scene meta files are never touched.
     ///
-    /// SINGLE TEXTURE OWNER (AC-2): SceneThumbnailStorage owns every runtime texture.
+    /// SINGLE TEXTURE OWNER (AC-2): UniThumbStorage owns every runtime texture.
     /// This service keeps no texture dictionary - s_GuidsWithThumbnails is the only
     /// extra state (a pre-built early-exit filter). The overlay callback fetches
     /// textures through the zero-I/O, zero-alloc
-    /// SceneThumbnailStorage.TryGetCachedTexture and never destroys textures.
+    /// UniThumbStorage.TryGetCachedTexture and never destroys textures.
     ///
     /// DISCOVERY (AC-1): the GUID set rebuilds from
-    /// SceneThumbnailStorage.EnumerateThumbnailGuids (System.IO.Directory.GetFiles
+    /// UniThumbStorage.EnumerateThumbnailGuids (System.IO.Directory.GetFiles
     /// over Library/SceneThumbnails). The asset database does not index Library/,
     /// so no database asset queries are ever used.
     ///
@@ -40,11 +40,11 @@ namespace MaykerStudio.SceneThumbnails
     /// mutation points (ApplyIcon/ClearIcon/ReapplyAllIcons). The warm pump never
     /// repaints - icons appear on the next natural Project window repaint.
     /// </summary>
-    public static class SceneThumbnailIconService
+    public static class UniThumbIconService
     {
         #region Constants
 
-        private const string k_LogPrefix = "[SceneThumbnailTool] ";
+        private const string k_LogPrefix = "[UniThumb] ";
         private const float k_IconPadding = 2f; // list-mode icon inset from row edges
         private const float k_IconMaxSize = 14f; // threshold: rects larger than this use aspect matching (tile mode)
         private const float k_LabelStrip = 14f; // tile-mode bottom zone reserved for the label
@@ -74,10 +74,10 @@ namespace MaykerStudio.SceneThumbnails
         [InitializeOnLoadMethod]
         private static void Initialize()
         {
-            SceneThumbnailStorage.ClearCache();
+            UniThumbStorage.ClearCache();
             RegisterOverlay();
             RegisterPump();
-            SceneThumbnailStorage.TextureEvicted += OnTextureEvicted;
+            UniThumbStorage.TextureEvicted += OnTextureEvicted;
             int count = RebuildOverlayState();
             if (count > 0)
             {
@@ -110,9 +110,9 @@ namespace MaykerStudio.SceneThumbnails
                 return false;
             }
 
-            if (!SceneThumbnailStorage.HasThumbnail(scenePath))
+            if (!UniThumbStorage.HasThumbnail(scenePath))
             {
-                if (SceneThumbnailStorage.Load(scenePath) == null)
+                if (UniThumbStorage.Load(scenePath) == null)
                 {
                     Debug.LogWarning(
                         k_LogPrefix
@@ -208,7 +208,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             for (int i = 0; i < k_WarmPerFrame && s_WarmQueue.Count > 0; i++)
             {
-                SceneThumbnailStorage.LoadByGuid(s_WarmQueue.Dequeue());
+                UniThumbStorage.LoadByGuid(s_WarmQueue.Dequeue());
             }
             if (s_WarmQueue.Count == 0 && !s_DrainLogged)
             {
@@ -240,7 +240,7 @@ namespace MaykerStudio.SceneThumbnails
         private static int RebuildOverlayState()
         {
             s_GuidsWithThumbnails.Clear();
-            string[] guids = SceneThumbnailStorage.EnumerateThumbnailGuids();
+            string[] guids = UniThumbStorage.EnumerateThumbnailGuids();
             for (int i = 0; i < guids.Length; i++)
             {
                 s_GuidsWithThumbnails.Add(guids[i]);
@@ -266,7 +266,7 @@ namespace MaykerStudio.SceneThumbnails
                 return;
             }
             Texture2D thumbnail;
-            if (!SceneThumbnailStorage.TryGetCachedTexture(guid, out thumbnail))
+            if (!UniThumbStorage.TryGetCachedTexture(guid, out thumbnail))
             {
                 return;
             }

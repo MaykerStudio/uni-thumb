@@ -1,4 +1,4 @@
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// Shared re-entrancy guard for MANUAL thumbnail generation paths only (window
@@ -6,7 +6,7 @@ namespace MaykerStudio.SceneThumbnails
     /// multi-select menu items. Capture is never started automatically by this tool:
     /// every generation must go through an explicit user action.
     /// </summary>
-    public static class SceneThumbnailGuard
+    public static class UniThumbGuard
     {
         #region Properties
 

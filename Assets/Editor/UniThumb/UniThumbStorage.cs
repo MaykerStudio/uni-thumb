@@ -5,7 +5,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// Scene-to-thumbnail mapping keyed by scene GUID. Thumbnails are PNG files named
@@ -27,11 +27,11 @@ namespace MaykerStudio.SceneThumbnails
     /// UI-agnostic: no EditorWindow or GUI references. All entry points are
     /// user-triggered (window button, context menus, batch). Passive storage.
     /// </summary>
-    public static class SceneThumbnailStorage
+    public static class UniThumbStorage
     {
         #region Constants
 
-        private const string k_LogPrefix = "[SceneThumbnailTool] ";
+        private const string k_LogPrefix = "[UniThumb] ";
         private const string k_StorageFolderName = "SceneThumbnails";
         private const string k_PrefsPrefix = "SceneThumbs.v4";
 
@@ -46,7 +46,7 @@ namespace MaykerStudio.SceneThumbnails
         // thumbnail look should bump the prefix again. When the key schema changes,
         // add a migration method that reads old keys, converts values, writes them
         // under the new prefix, then deletes the old keys. Never reuse a prefix with
-        // a new schema. SceneThumbnailBatchMenus mirrors this prefix for its
+        // a new schema. UniThumbBatchMenus mirrors this prefix for its
         // Refresh-All staleness check; keep both in sync on migration.
         // Bumped v2 -> v3 when CaptureUi defaulted to true (UI canvases now render
         // into thumbnails), so existing thumbnails regenerate with UI included.
@@ -99,7 +99,7 @@ namespace MaykerStudio.SceneThumbnails
         /// <summary>
         /// Destroys every cached texture and empties the cache, resetting the LRU
         /// sequence and the byte accounting. Idempotent: destroying an
-        /// already-destroyed texture is a no-op. Called by SceneThumbnailIconService
+        /// already-destroyed texture is a no-op. Called by UniThumbIconService
         /// initialization - the sole domain-reload init (t11/M20): the icon service
         /// clears here, then rebuilds and enqueues the warm queue.
         /// </summary>

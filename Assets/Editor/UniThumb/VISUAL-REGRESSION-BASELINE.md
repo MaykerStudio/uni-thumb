@@ -1,4 +1,4 @@
-# Visual Regression Baseline: Scene Thumbnail Tool UI/UX Redesign
+# Visual Regression Baseline: UniThumb UI/UX Redesign
 
 **Plan**: `20260808-scene-thumbnail-ui-ux`
 **Date**: 2026-08-08
@@ -9,9 +9,9 @@
 
 | File | Lines | Role |
 |------|-------|------|
-| `SceneThumbnailWindow.cs` | 1318 | Window logic, keyboard shortcuts, batch ETA, result formatting |
-| `SceneThumbnailWindow.uxml` | 79 | UI structure, tooltips, view-data-key persistence |
-| `SceneThumbnailWindow.uss` | 249 | Theming, flex layout, hover effect, ProgressBar accent |
+| `UniThumbWindow.cs` | 1318 | Window logic, keyboard shortcuts, batch ETA, result formatting |
+| `UniThumbWindow.uxml` | 79 | UI structure, tooltips, view-data-key persistence |
+| `UniThumbWindow.uss` | 249 | Theming, flex layout, hover effect, ProgressBar accent |
 
 ---
 
@@ -107,7 +107,7 @@ Both themes define identical structure with theme-appropriate colors:
 ## Manual Verification Procedure
 
 1. Open Unity 6000.3.11f1, open any saved scene
-2. Open `Window > Scene Thumbnail Tool`
+2. Open `Window > UniThumb`
 3. Verify window opens at default size, cannot resize past 600x800
 4. Verify footer shows shortcut documentation
 5. Resize window from 320px to 600px width: preview should scale proportionally
@@ -126,7 +126,7 @@ Both themes define identical structure with theme-appropriate colors:
 
 When manual screenshots are taken, store at:
 ```
-Assets/Editor/SceneThumbnailTool/Evidence/
+Assets/Editor/UniThumb/Evidence/
   baseline-400x600-dark.png
   baseline-400x600-light.png
   hover-preview-dark.png

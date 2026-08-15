@@ -1,6 +1,6 @@
 {
-    "name": "SceneThumbnailTool.Editor",
-    "rootNamespace": "MaykerStudio.SceneThumbnails",
+    "name": "UniThumb.Editor",
+    "rootNamespace": "MaykerStudio.UniThumb",
     "references": [],
     "includePlatforms": [
         "Editor"

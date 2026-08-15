@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// What the capture camera clears to before rendering the scene.
@@ -75,13 +75,13 @@ namespace MaykerStudio.SceneThumbnails
     /// Reusable pure C# API that renders the active scene to a PNG thumbnail.
     /// Never renders through SceneView.camera: a dedicated temp GameObject + Camera is used.
     /// </summary>
-    public static class SceneThumbnailCapture
+    public static class UniThumbCapture
     {
         #region Constants
 
-        private const string k_LogPrefix = "[SceneThumbnailTool] ";
-        private const string k_TempCameraName = "__SceneThumbnailCaptureCamera";
-        private const string k_TempRenderTextureName = "__SceneThumbnailCaptureRT";
+        private const string k_LogPrefix = "[UniThumb] ";
+        private const string k_TempCameraName = "__UniThumbCaptureCamera";
+        private const string k_TempRenderTextureName = "__UniThumbCaptureRT";
         private const int k_MinResolution = 16;
         private const int k_MaxResolution = 4096;
         private const int k_MaxReliableRenderPixels = 16000000;
@@ -94,7 +94,7 @@ namespace MaykerStudio.SceneThumbnails
         private const float k_DefaultFitFactor = 2f;
         private const float k_MaxOrbitPitch = 89f;
         private const float k_MinFarClip = 1000f;
-        private const string k_TempUiPassCameraName = "__SceneThumbnailUiPassCamera";
+        private const string k_TempUiPassCameraName = "__UniThumbUiPassCamera";
 
         /// <summary>
         /// Wave-0 probe P1 (docs/plan/20260813-scene-thumbnail-ui-composite/logs/

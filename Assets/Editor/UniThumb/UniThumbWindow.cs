@@ -8,25 +8,25 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
-namespace MaykerStudio.SceneThumbnails
+namespace MaykerStudio.UniThumb
 {
     /// <summary>
     /// Manual-only scene thumbnail tool window. The Generate button is the ONLY
     /// single-scene capture path in this window: no capture happens on
     /// open/close/repaint or on scene add/modify/save. The window also drives
-    /// the folder batch (SceneThumbnailBatchMenus.TryStartFolderBatch) with
+    /// the folder batch (UniThumbBatchMenus.TryStartFolderBatch) with
     /// progress and result feedback. Capture logic lives in
-    /// SceneThumbnailCapture; the thumbnail folder is fixed and owned by
-    /// SceneThumbnailStorage (shown read-only in the footer).
-    /// UI Toolkit build (SceneThumbnailWindow.uxml/.uss); the window never uses
+    /// UniThumbCapture; the thumbnail folder is fixed and owned by
+    /// UniThumbStorage (shown read-only in the footer).
+    /// UI Toolkit build (UniThumbWindow.uxml/.uss); the window never uses
     /// the IMGUI painting path.
     /// </summary>
-    public class SceneThumbnailWindow : EditorWindow
+    public class UniThumbWindow : EditorWindow
     {
         #region Constants
 
-        private const string k_MenuPath = "Window/Scene Thumbnail Tool";
-        private const string k_WindowTitle = "Scene Thumbnail Tool";
+        private const string k_MenuPath = "Window/UniThumb";
+        private const string k_WindowTitle = "UniThumb";
         private const string k_NoThumbnailLabel = "No thumbnail yet - press Generate Thumbnail";
         private const string k_InvalidFolderLabel =
             "Not a project folder - pick a folder inside Assets/";
@@ -34,10 +34,8 @@ namespace MaykerStudio.SceneThumbnails
             "Disabled while using the Scene View angle in perspective mode";
         private const string k_ColorDisabledLabel =
             "Background color only applies in Solid Color mode.";
-        private const string k_UxmlPath =
-            "Assets/Editor/SceneThumbnailTool/SceneThumbnailWindow.uxml";
-        private const string k_UssPath =
-            "Assets/Editor/SceneThumbnailTool/SceneThumbnailWindow.uss";
+        private const string k_UxmlPath = "Assets/Editor/UniThumb/UniThumbWindow.uxml";
+        private const string k_UssPath = "Assets/Editor/UniThumb/UniThumbWindow.uss";
         private const int k_PreviewRefetchAttempts = 4;
         private const long k_PreviewRefetchDelayMs = 100;
         private const int k_MaxFolderMenuEntries = 500;
@@ -97,7 +95,7 @@ namespace MaykerStudio.SceneThumbnails
         private string _statusMessage = string.Empty;
         private MessageType _statusType = MessageType.None;
 
-        // Cache-owned runtime texture (SceneThumbnailStorage is the sole owner):
+        // Cache-owned runtime texture (UniThumbStorage is the sole owner):
         // never destroy it, only drop the reference. Re-fetched by GUID after
         // eviction (destroyed instances compare == null).
         private Texture2D _previewTexture;
@@ -181,7 +179,7 @@ namespace MaykerStudio.SceneThumbnails
         {
             minSize = new Vector2(320f, 480f);
             maxSize = new Vector2(600f, 800f);
-            _folderPath = SceneThumbnailStorage.EnsureFolder();
+            _folderPath = UniThumbStorage.EnsureFolder();
             if (!string.IsNullOrEmpty(_batchFolderPath))
             {
                 RevalidateBatchFolder();
@@ -196,7 +194,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             _batchFolderInputInvalid = false;
             EditorSceneManager.activeSceneChangedInEditMode += OnActiveSceneChangedInEditMode;
-            SceneThumbnailStorage.TextureEvicted += OnTextureEvicted;
+            UniThumbStorage.TextureEvicted += OnTextureEvicted;
             EditorApplication.update += OnBatchUpdateTick;
             SceneView.duringSceneGui += OnSceneViewGui;
             EditorApplication.hierarchyChanged += OnHierarchyChanged;
@@ -206,7 +204,7 @@ namespace MaykerStudio.SceneThumbnails
             // paths keep using the window's configured settings even when the
             // window is not reopened since the reload. BuildSettings reads only
             // serialized fields, which are restored before OnEnable.
-            SceneThumbnailCapture.RememberSettings(BuildSettings());
+            UniThumbCapture.RememberSettings(BuildSettings());
         }
 
         private void OnDisable()
@@ -218,7 +216,7 @@ namespace MaykerStudio.SceneThumbnails
             SceneView.duringSceneGui -= OnSceneViewGui;
             EditorApplication.hierarchyChanged -= OnHierarchyChanged;
             Undo.undoRedoPerformed -= OnUndoRedoPerformed;
-            SceneThumbnailStorage.TextureEvicted -= OnTextureEvicted;
+            UniThumbStorage.TextureEvicted -= OnTextureEvicted;
             RestorePreviewLights();
             if (_livePreviewRT != null)
             {
@@ -242,15 +240,15 @@ namespace MaykerStudio.SceneThumbnails
             }
             else
             {
-                Debug.LogError("SceneThumbnailWindow: stylesheet not found at " + k_UssPath);
+                Debug.LogError("UniThumbWindow: stylesheet not found at " + k_UssPath);
             }
 
             VisualTreeAsset tree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(k_UxmlPath);
             if (tree == null)
             {
-                Debug.LogError("SceneThumbnailWindow: UXML not found at " + k_UxmlPath);
+                Debug.LogError("UniThumbWindow: UXML not found at " + k_UxmlPath);
                 rootVisualElement.Add(
-                    new Label("Failed to load SceneThumbnailWindow.uxml - see Console.")
+                    new Label("Failed to load UniThumbWindow.uxml - see Console.")
                 );
                 return;
             }
@@ -263,7 +261,7 @@ namespace MaykerStudio.SceneThumbnails
             CacheElements();
             WireCallbacks();
             ApplySectionIcons();
-            _wasBatchRunning = SceneThumbnailBatchMenus.IsBatchRunning;
+            _wasBatchRunning = UniThumbBatchMenus.IsBatchRunning;
             PushState();
         }
 
@@ -274,7 +272,7 @@ namespace MaykerStudio.SceneThumbnails
         [MenuItem(k_MenuPath)]
         public static void OpenWindow()
         {
-            GetWindow<SceneThumbnailWindow>(k_WindowTitle);
+            GetWindow<UniThumbWindow>(k_WindowTitle);
         }
 
         #endregion
@@ -362,7 +360,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             if (_deleteThumbnailButton != null)
             {
-                _deleteThumbnailButton.clicked += DeleteActiveSceneThumbnail;
+                _deleteThumbnailButton.clicked += DeleteActiveUniThumb;
             }
             if (_clearFolderButton != null)
             {
@@ -663,7 +661,7 @@ namespace MaykerStudio.SceneThumbnails
 
         private void UpdateGenerateState()
         {
-            bool busy = SceneThumbnailGuard.IsGenerating;
+            bool busy = UniThumbGuard.IsGenerating;
             if (_generateButton != null)
             {
                 _generateButton.SetEnabled(!busy);
@@ -725,7 +723,7 @@ namespace MaykerStudio.SceneThumbnails
             _previewDirty = false;
             EditorApplication.update -= RenderLivePreview;
 
-            if (SceneThumbnailGuard.IsGenerating || rootVisualElement == null)
+            if (UniThumbGuard.IsGenerating || rootVisualElement == null)
             {
                 return;
             }
@@ -764,7 +762,7 @@ namespace MaykerStudio.SceneThumbnails
                 }
 
                 CaptureSettings settings = BuildSettings();
-                GameObject tempGo = new GameObject("__SceneThumbnailPreviewCamera");
+                GameObject tempGo = new GameObject("__UniThumbPreviewCamera");
                 tempGo.hideFlags = HideFlags.HideAndDontSave;
                 Camera cam = tempGo.AddComponent<Camera>();
 
@@ -794,12 +792,10 @@ namespace MaykerStudio.SceneThumbnails
                 // In composite mode the overlay canvases are left untouched during
                 // the scene pass; the UI is rendered separately at SceneView aspect
                 // and composited after the readback (CompositeSceneViewUi below).
-                bool compositeEligible = SceneThumbnailCapture.IsSceneViewUiCompositeEligible(
-                    settings
-                );
-                SceneThumbnailCapture.UiCaptureSession uiSession =
+                bool compositeEligible = UniThumbCapture.IsSceneViewUiCompositeEligible(settings);
+                UniThumbCapture.UiCaptureSession uiSession =
                     settings.CaptureUi && !compositeEligible
-                        ? SceneThumbnailCapture.UiCaptureSession.Begin(cam, settings.UiScale)
+                        ? UniThumbCapture.UiCaptureSession.Begin(cam, settings.UiScale)
                         : null;
                 try
                 {
@@ -847,7 +843,7 @@ namespace MaykerStudio.SceneThumbnails
                 // any failure (canvas restore included), so only replace on differ.
                 if (compositeEligible)
                 {
-                    Texture2D composite = SceneThumbnailCapture.CompositeSceneViewUi(
+                    Texture2D composite = UniThumbCapture.CompositeSceneViewUi(
                         settings,
                         _livePreviewTexture
                     );
@@ -880,7 +876,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("[SceneThumbnailTool] Live preview failed: " + ex.Message);
+                Debug.LogWarning("[UniThumb] Live preview failed: " + ex.Message);
             }
         }
 
@@ -1080,7 +1076,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             if (_previewTexture == null && !string.IsNullOrEmpty(_previewGuid))
             {
-                SceneThumbnailStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
+                UniThumbStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
             }
             return _previewTexture != null;
         }
@@ -1150,8 +1146,8 @@ namespace MaykerStudio.SceneThumbnails
 
         private void UpdateBatchUI()
         {
-            bool running = SceneThumbnailBatchMenus.IsBatchRunning;
-            bool busy = SceneThumbnailGuard.IsGenerating;
+            bool running = UniThumbBatchMenus.IsBatchRunning;
+            bool busy = UniThumbGuard.IsGenerating;
             if (_generateFolderButton != null)
             {
                 _generateFolderButton.SetEnabled(!busy && _folderValid);
@@ -1166,7 +1162,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             if (running)
             {
-                UpdateBatchProgress(SceneThumbnailBatchMenus.GetBatchSnapshot());
+                UpdateBatchProgress(UniThumbBatchMenus.GetBatchSnapshot());
             }
             if (_batchResultHelp != null)
             {
@@ -1184,7 +1180,7 @@ namespace MaykerStudio.SceneThumbnails
             }
         }
 
-        private void UpdateBatchProgress(SceneThumbnailBatchMenus.BatchSnapshot snapshot)
+        private void UpdateBatchProgress(UniThumbBatchMenus.BatchSnapshot snapshot)
         {
             float value = snapshot.Total > 0 ? snapshot.Processed / (float)snapshot.Total : 0f;
 
@@ -1222,7 +1218,7 @@ namespace MaykerStudio.SceneThumbnails
 
         private void CancelBatch()
         {
-            SceneThumbnailBatchMenus.RequestBatchCancel();
+            UniThumbBatchMenus.RequestBatchCancel();
             _cancelRequested = true;
         }
 
@@ -1247,7 +1243,7 @@ namespace MaykerStudio.SceneThumbnails
         {
             Rect screenRect = GUIUtility.GUIToScreenRect(_browseButton.worldBound);
             List<string> folders = CollectProjectFolders();
-            SceneThumbnailFolderMenu.ShowMenu(screenRect, folders, OnFolderPicked);
+            UniThumbFolderMenu.ShowMenu(screenRect, folders, OnFolderPicked);
         }
 
         private void OnFolderPicked(string path)
@@ -1329,7 +1325,7 @@ namespace MaykerStudio.SceneThumbnails
 
         private void RefreshGenerateFolderEnabled()
         {
-            bool busy = SceneThumbnailGuard.IsGenerating;
+            bool busy = UniThumbGuard.IsGenerating;
             if (_generateFolderButton != null)
             {
                 _generateFolderButton.SetEnabled(!busy && _folderValid);
@@ -1414,9 +1410,9 @@ namespace MaykerStudio.SceneThumbnails
             // Snapshot the current UI settings before the pump starts; the pump
             // reads the store once in StartBatchPump so mid-batch UI edits cannot
             // drift per-scene captures.
-            SceneThumbnailCapture.RememberSettings(BuildSettings());
+            UniThumbCapture.RememberSettings(BuildSettings());
             string error;
-            if (!SceneThumbnailBatchMenus.TryStartFolderBatch(_batchFolderPath, out error))
+            if (!UniThumbBatchMenus.TryStartFolderBatch(_batchFolderPath, out error))
             {
                 SetStatus("Could not start folder batch: " + error, MessageType.Warning);
                 return;
@@ -1437,8 +1433,7 @@ namespace MaykerStudio.SceneThumbnails
         /// </summary>
         private void OnBatchUpdateTick()
         {
-            SceneThumbnailBatchMenus.BatchSnapshot snapshot =
-                SceneThumbnailBatchMenus.GetBatchSnapshot();
+            UniThumbBatchMenus.BatchSnapshot snapshot = UniThumbBatchMenus.GetBatchSnapshot();
             if (snapshot.IsRunning)
             {
                 if (!_wasBatchRunning)
@@ -1455,14 +1450,14 @@ namespace MaykerStudio.SceneThumbnails
             }
         }
 
-        private void OnBatchEnded(SceneThumbnailBatchMenus.BatchSnapshot snapshot)
+        private void OnBatchEnded(UniThumbBatchMenus.BatchSnapshot snapshot)
         {
             string scenePath = EditorSceneManager.GetActiveScene().path;
             if (!string.IsNullOrEmpty(scenePath))
             {
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
-                _previewTexture = SceneThumbnailStorage.Load(scenePath);
-                _previewStale = SceneThumbnailStorage.IsSceneStale(scenePath);
+                _previewTexture = UniThumbStorage.Load(scenePath);
+                _previewStale = UniThumbStorage.IsSceneStale(scenePath);
             }
             if (snapshot.Processed >= snapshot.Total)
             {
@@ -1501,7 +1496,7 @@ namespace MaykerStudio.SceneThumbnails
         {
             if (evt.keyCode == KeyCode.Escape)
             {
-                if (SceneThumbnailBatchMenus.IsBatchRunning)
+                if (UniThumbBatchMenus.IsBatchRunning)
                 {
                     evt.StopPropagation();
                     CancelBatch();
@@ -1521,7 +1516,7 @@ namespace MaykerStudio.SceneThumbnails
                 return;
             }
             evt.StopPropagation();
-            if (SceneThumbnailGuard.IsGenerating)
+            if (UniThumbGuard.IsGenerating)
             {
                 return;
             }
@@ -1613,7 +1608,7 @@ namespace MaykerStudio.SceneThumbnails
             if (!string.IsNullOrEmpty(scenePath))
             {
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
-                SceneThumbnailStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
+                UniThumbStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
             }
             UpdateActiveSceneLabel();
             UpdatePreviewUI();
@@ -1655,7 +1650,7 @@ namespace MaykerStudio.SceneThumbnails
 
         private void GenerateThumbnail()
         {
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 SetStatus("A thumbnail generation is already in progress.", MessageType.Warning);
                 return;
@@ -1673,8 +1668,8 @@ namespace MaykerStudio.SceneThumbnails
                 }
 
                 CaptureSettings settings = BuildSettings();
-                SceneThumbnailCapture.RememberSettings(settings);
-                CaptureResult result = SceneThumbnailCapture.Capture(settings);
+                UniThumbCapture.RememberSettings(settings);
+                CaptureResult result = UniThumbCapture.Capture(settings);
                 if (!result.Success)
                 {
                     SetStatus(
@@ -1684,7 +1679,7 @@ namespace MaykerStudio.SceneThumbnails
                     return;
                 }
 
-                if (!SceneThumbnailStorage.Save(scenePath, result.PngBytes))
+                if (!UniThumbStorage.Save(scenePath, result.PngBytes))
                 {
                     SetStatus(
                         "Save failed for '" + scenePath + "'. See Console.",
@@ -1693,14 +1688,14 @@ namespace MaykerStudio.SceneThumbnails
                     return;
                 }
 
-                // Match the menu-path ordering (SceneThumbnailBatchMenus): apply the
+                // Match the menu-path ordering (UniThumbBatchMenus): apply the
                 // Project window icon immediately so the thumbnail shows without a
                 // domain reload or Refresh All. Mutation-point texture source:
                 // Load is allowed here (never on the UI refresh path).
-                SceneThumbnailIconService.ApplyIcon(scenePath);
+                UniThumbIconService.ApplyIcon(scenePath);
 
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
-                _previewTexture = SceneThumbnailStorage.Load(scenePath);
+                _previewTexture = UniThumbStorage.Load(scenePath);
                 _previewStale = false;
                 string sceneName = Path.GetFileNameWithoutExtension(scenePath);
                 string suffix = string.IsNullOrEmpty(result.Warning)
@@ -1720,13 +1715,13 @@ namespace MaykerStudio.SceneThumbnails
             }
             finally
             {
-                SceneThumbnailGuard.Exit();
+                UniThumbGuard.Exit();
             }
             UpdateGenerateState();
             UpdatePreviewUI();
         }
 
-        private void DeleteActiveSceneThumbnail()
+        private void DeleteActiveUniThumb()
         {
             string scenePath = EditorSceneManager.GetActiveScene().path;
             if (string.IsNullOrEmpty(scenePath))
@@ -1737,15 +1732,15 @@ namespace MaykerStudio.SceneThumbnails
                 );
                 return;
             }
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 SetStatus("A thumbnail generation is already in progress.", MessageType.Warning);
                 return;
             }
             try
             {
-                bool deleted = SceneThumbnailStorage.Delete(scenePath);
-                SceneThumbnailIconService.ClearIcon(scenePath);
+                bool deleted = UniThumbStorage.Delete(scenePath);
+                UniThumbIconService.ClearIcon(scenePath);
                 string sceneName = Path.GetFileNameWithoutExtension(scenePath);
                 SetStatus(
                     deleted
@@ -1756,7 +1751,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             finally
             {
-                SceneThumbnailGuard.Exit();
+                UniThumbGuard.Exit();
             }
             _previewTexture = null;
             _previewStale = false;
@@ -1772,13 +1767,11 @@ namespace MaykerStudio.SceneThumbnails
                 SetStatus("Pick a valid batch folder first.", MessageType.Warning);
                 return;
             }
-            List<string> scenes = SceneThumbnailBatchMenus.CollectFolderScenePaths(
-                _batchFolderPath
-            );
+            List<string> scenes = UniThumbBatchMenus.CollectFolderScenePaths(_batchFolderPath);
             List<string> targets = new List<string>();
             for (int i = 0; i < scenes.Count; i++)
             {
-                if (SceneThumbnailStorage.HasThumbnail(scenes[i]))
+                if (UniThumbStorage.HasThumbnail(scenes[i]))
                 {
                     targets.Add(scenes[i]);
                 }
@@ -1806,7 +1799,7 @@ namespace MaykerStudio.SceneThumbnails
                 SetStatus("Folder thumbnail clear cancelled.", MessageType.Info);
                 return;
             }
-            if (!SceneThumbnailGuard.TryEnter())
+            if (!UniThumbGuard.TryEnter())
             {
                 SetStatus("A thumbnail generation is already in progress.", MessageType.Warning);
                 return;
@@ -1816,12 +1809,12 @@ namespace MaykerStudio.SceneThumbnails
             {
                 for (int i = 0; i < targets.Count; i++)
                 {
-                    if (SceneThumbnailStorage.Delete(targets[i]))
+                    if (UniThumbStorage.Delete(targets[i]))
                     {
                         deleted++;
                     }
                 }
-                SceneThumbnailIconService.ReapplyAllIcons();
+                UniThumbIconService.ReapplyAllIcons();
                 SetStatus(
                     "Deleted "
                         + deleted
@@ -1835,7 +1828,7 @@ namespace MaykerStudio.SceneThumbnails
             }
             finally
             {
-                SceneThumbnailGuard.Exit();
+                UniThumbGuard.Exit();
             }
             ResetActiveScenePreview();
             UpdateGenerateState();
@@ -1852,7 +1845,7 @@ namespace MaykerStudio.SceneThumbnails
             if (!string.IsNullOrEmpty(scenePath))
             {
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
-                SceneThumbnailStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
+                UniThumbStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
             }
             UpdatePreviewUI();
         }
@@ -1862,7 +1855,7 @@ namespace MaykerStudio.SceneThumbnails
             int width;
             int height;
             GetResolution(out width, out height);
-            CaptureSettings settings = SceneThumbnailCapture.CreateDefaultSettings();
+            CaptureSettings settings = UniThumbCapture.CreateDefaultSettings();
             settings.Width = width;
             settings.Height = height;
             settings.UseSceneViewAngle = _useSceneViewAngle;
