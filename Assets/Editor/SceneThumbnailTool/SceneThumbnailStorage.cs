@@ -13,7 +13,7 @@ namespace MaykerStudio.SceneThumbnails
     /// prefab previews. No .meta files, no AssetDatabase import, no VCS churn. GUID keys
     /// survive scene renames.
     ///
-    /// Invalidation: per-scene EditorPrefs key SceneThumbs.v2.{guid} stores
+    /// Invalidation: per-scene EditorPrefs key SceneThumbs.v4.{guid} stores
     /// File.GetLastWriteTimeUtc(scenePath).Ticks recorded at save time (long does not
     /// fit EditorPrefs.SetInt, so it is stored as an invariant-culture string). Load
     /// compares the live scene file ticks against the cached record and reloads from
@@ -33,7 +33,7 @@ namespace MaykerStudio.SceneThumbnails
 
         private const string k_LogPrefix = "[SceneThumbnailTool] ";
         private const string k_StorageFolderName = "SceneThumbnails";
-        private const string k_PrefsPrefix = "SceneThumbs.v2";
+        private const string k_PrefsPrefix = "SceneThumbs.v4";
 
         // t11 size cap: 512px thumbnails are ~1MB each, 4096px ones ~64MB each.
         // Insertion evicts least-recently-touched entries while over the cap.
@@ -48,6 +48,11 @@ namespace MaykerStudio.SceneThumbnails
         // under the new prefix, then deletes the old keys. Never reuse a prefix with
         // a new schema. SceneThumbnailBatchMenus mirrors this prefix for its
         // Refresh-All staleness check; keep both in sync on migration.
+        // Bumped v2 -> v3 when CaptureUi defaulted to true (UI canvases now render
+        // into thumbnails), so existing thumbnails regenerate with UI included.
+        // Bumped v3 -> v4 when the UI composite feature changed the capture default
+        // look (UI rendered at SceneView aspect when CaptureUi + UseSceneViewAngle
+        // are both on), so existing thumbnails regenerate with the new layout.
 
         #endregion
 
@@ -364,7 +369,7 @@ namespace MaykerStudio.SceneThumbnails
 
         /// <summary>
         /// True when the scene file's LastWriteTimeUtc ticks differ from the ticks
-        /// in the invalidation record (EditorPrefs key SceneThumbs.v2.{guid}).
+        /// in the invalidation record (EditorPrefs key SceneThumbs.v4.{guid}).
         /// False for null/empty paths, unknown GUIDs, or scenes with no record yet
         /// (nothing saved = not stale). Callers: mutation points only (after
         /// Generate / after a batch), never on the UI refresh path.

@@ -88,9 +88,12 @@ namespace MaykerStudio.SceneThumbnails
         // Mirror of SceneThumbnailStorage's invalidation key schema (k_PrefsPrefix
         // + "." + sceneGuid). Storage owns the schema; this copy lets Refresh All
         // decide staleness (outdated = scene LastWriteTimeUtc != stored ticks)
-        // without touching storage internals. v2: bumped with the capture-fidelity
-        // defaults (skybox + post-processing); keep in sync on any bump.
-        private const string k_PrefsPrefix = "SceneThumbs.v2";
+        // without touching storage internals. v3: bumped when CaptureUi defaulted
+        // to true (UI canvases render into thumbnails); keep in sync on any bump.
+        // Bumped v3 -> v4 when the UI composite feature changed the capture default
+        // look (UI rendered at SceneView aspect when CaptureUi + UseSceneViewAngle
+        // are both on), so existing thumbnails regenerate with the new layout.
+        private const string k_PrefsPrefix = "SceneThumbs.v4";
 
         #endregion
 
@@ -105,6 +108,11 @@ namespace MaykerStudio.SceneThumbnails
         private static bool s_SwitchedScenes;
         private static string s_BatchKind;
         private static int s_SkippedCount;
+
+        // Capture settings snapshot for the running batch, taken once in
+        // StartBatchPump from the window's remembered settings so mid-batch UI
+        // edits cannot drift per-scene captures.
+        private static CaptureSettings s_BatchSettings;
 
         // Current scene being processed (GetBatchSnapshot.CurrentScene) and the
         // user cancel flag (RequestBatchCancel); both reset in CancelBatchState.
@@ -166,9 +174,10 @@ namespace MaykerStudio.SceneThumbnails
         /// <summary>
         /// Starts the folder batch over a single project folder (recursive scene
         /// discovery, every scene regenerates - not stale-only). Validates the
-        /// assets-relative path, enters the shared guard and the capture-readiness
-        /// checks like the menu handlers, then starts the pump. Returns false with
-        /// a user-facing error string on any refusal. The pump holds the guard
+        /// assets-relative path, asks for user confirmation, then enters the
+        /// shared guard and the capture-readiness checks like the menu handlers
+        /// before starting the pump. Returns false with a user-facing error
+        /// string on any refusal or cancellation. The pump holds the guard
         /// until CompleteBatch/AbortBatch/CancelBatch -> CancelBatchState; every
         /// pre-pump exit releases it exactly once here (never a double Exit).
         /// </summary>
@@ -188,6 +197,38 @@ namespace MaykerStudio.SceneThumbnails
                 return false;
             }
 
+            // Count the work and confirm BEFORE the guard: a cancelled dialog
+            // must leave the guard free, no pump scheduled and no batch state
+            // mutated. The work list is reused by the pump below.
+            List<string> work;
+            int skipped;
+            try
+            {
+                work = CollectFolderWork(new List<string> { folderPath }, out skipped);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                error = "Unexpected error while starting the batch: " + exception.Message;
+                return false;
+            }
+            if (work.Count == 0)
+            {
+                error = "No scenes found in folder '" + folderPath + "'.";
+                return false;
+            }
+            if (
+                !ConfirmBatchStart(
+                    "Generate Scene Thumbnails",
+                    "Generate thumbnails for " + work.Count + " scene(s) in '" + folderPath + "'?",
+                    "Generate"
+                )
+            )
+            {
+                error = "Batch generation cancelled by user.";
+                return false;
+            }
+
             if (!SceneThumbnailGuard.TryEnter())
             {
                 error = "Another thumbnail generation is already in progress.";
@@ -201,14 +242,6 @@ namespace MaykerStudio.SceneThumbnails
                 {
                     error =
                         "The editor is busy (play mode, compiling or importing assets). Try again when it settles.";
-                    return false;
-                }
-
-                int skipped;
-                List<string> work = CollectFolderWork(new List<string> { folderPath }, out skipped);
-                if (work.Count == 0)
-                {
-                    error = "No scenes found in folder '" + folderPath + "'.";
                     return false;
                 }
 
@@ -351,6 +384,20 @@ namespace MaykerStudio.SceneThumbnails
         [MenuItem(k_RefreshAllMenuPath, false, k_RefreshAllMenuPriority)]
         public static void RefreshAllSceneThumbnails()
         {
+            // Confirmation gate before the guard: a cancelled dialog must leave
+            // the guard free and no pump scheduled.
+            if (
+                !ConfirmBatchStart(
+                    "Refresh All Scene Thumbnails",
+                    "Regenerate thumbnails for all scenes?",
+                    "Regenerate"
+                )
+            )
+            {
+                Debug.Log(k_LogPrefix + "Refresh All cancelled by user.");
+                return;
+            }
+
             if (!SceneThumbnailGuard.TryEnter())
             {
                 Debug.LogWarning(
@@ -409,6 +456,38 @@ namespace MaykerStudio.SceneThumbnails
                 return;
             }
 
+            // Count the work and confirm BEFORE the guard: a cancelled dialog
+            // must leave the guard free and no pump scheduled.
+            int skipped;
+            List<string> work;
+            try
+            {
+                work = CollectFolderWork(folders, out skipped);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                return;
+            }
+            if (work.Count == 0)
+            {
+                Debug.Log(k_LogPrefix + "No scenes found in folder; nothing to generate.");
+                return;
+            }
+            string folderLabel =
+                folders.Count == 1 ? "'" + folders[0] + "'" : folders.Count + " selected folders";
+            if (
+                !ConfirmBatchStart(
+                    "Generate Scene Thumbnails",
+                    "Generate thumbnails for " + work.Count + " scene(s) in " + folderLabel + "?",
+                    "Generate"
+                )
+            )
+            {
+                Debug.Log(k_LogPrefix + "Generate in Folder cancelled by user.");
+                return;
+            }
+
             if (!SceneThumbnailGuard.TryEnter())
             {
                 Debug.LogWarning(
@@ -423,14 +502,6 @@ namespace MaykerStudio.SceneThumbnails
             {
                 if (!CanRunCapture())
                 {
-                    return;
-                }
-
-                int skipped;
-                List<string> work = CollectFolderWork(folders, out skipped);
-                if (work.Count == 0)
-                {
-                    Debug.Log(k_LogPrefix + "No scenes found in folder; nothing to generate.");
                     return;
                 }
 
@@ -592,7 +663,7 @@ namespace MaykerStudio.SceneThumbnails
             try
             {
                 return SceneThumbnailCapture.Capture(
-                    ClampBulkResolution(SceneThumbnailCapture.CreateDefaultSettings())
+                    ClampBulkResolution(SceneThumbnailCapture.GetLastSettingsOrDefault())
                 );
             }
             finally
@@ -826,11 +897,26 @@ namespace MaykerStudio.SceneThumbnails
         }
 
         /// <summary>
+        /// Confirmation gate before any batch generation starts (folder batch
+        /// menu, Refresh All menu, window folder button). Same idiom as the
+        /// Clear Folder Thumbnails dialog. Callers invoke it BEFORE
+        /// SceneThumbnailGuard.TryEnter so a cancelled dialog leaves the guard
+        /// free and no pump scheduled.
+        /// </summary>
+        private static bool ConfirmBatchStart(string title, string message, string confirm)
+        {
+            return EditorUtility.DisplayDialog(title, message, confirm, "Cancel");
+        }
+
+        /// <summary>
         /// Kicks off the async batch pump. The guard entered by the menu handler
         /// stays held until the pump completes or aborts.
         /// </summary>
         private static void StartBatchPump(List<string> work)
         {
+            // Snapshot once at pump start: ProcessSceneCapture must not re-read
+            // the store per scene (prevents mid-batch drift from UI edits).
+            s_BatchSettings = SceneThumbnailCapture.GetLastSettingsOrDefault();
             s_PendingScenes = new Queue<string>(work);
             s_SucceededScenes = new List<string>();
             s_FailedScenes = new List<string>();
@@ -947,7 +1033,7 @@ namespace MaykerStudio.SceneThumbnails
             try
             {
                 CaptureResult result = SceneThumbnailCapture.Capture(
-                    ClampBulkResolution(SceneThumbnailCapture.CreateDefaultSettings())
+                    ClampBulkResolution(s_BatchSettings)
                 );
                 if (!result.Success)
                 {

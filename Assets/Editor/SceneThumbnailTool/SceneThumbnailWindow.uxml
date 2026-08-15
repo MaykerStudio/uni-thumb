@@ -57,6 +57,8 @@
                 <ui:Label name="bg-color-hint" text="Background color only applies in Solid Color mode." class="stt-mini stt-hint stt-hidden" />
                 <ui:Toggle name="lighting-toggle" label="Disable scene lighting" tooltip="Temporarily disables all lights during capture." />
                 <ui:Toggle name="postfx-toggle" label="Post-processing (Volume effects)" tooltip="Renders URP Volume effects (tonemapping, bloom, vignette) into the thumbnail." />
+                <ui:Toggle name="capture-ui-toggle" label="Capture UI" tooltip="Renders scene canvases into the thumbnail (switches Screen Space Overlay canvases to the capture camera)" />
+                <ui:Slider name="ui-scale-slider" label="UI Scale" low-value="0.5" high-value="3" value="1" tooltip="Scales the captured UI within the thumbnail (1 = as seen in the editor)" />
             </ui:VisualElement>
             <ui:VisualElement class="stt-card">
                 <ui:VisualElement class="stt-card-header-row">

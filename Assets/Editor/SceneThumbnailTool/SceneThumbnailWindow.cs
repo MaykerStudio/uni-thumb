@@ -82,6 +82,9 @@ namespace MaykerStudio.SceneThumbnails
         private bool _captureUi = true;
 
         [SerializeField]
+        private float _uiScale = 1f;
+
+        [SerializeField]
         private LayerMask _layerMask = -1;
 
         [SerializeField]
@@ -153,6 +156,7 @@ namespace MaykerStudio.SceneThumbnails
         private Toggle _lightingToggle;
         private Toggle _postfxToggle;
         private Toggle _captureUiToggle;
+        private Slider _uiScaleSlider;
         private MaskField _layersMask;
         private VisualElement _batchFolderRow;
         private TextField _batchFolderField;
@@ -197,6 +201,12 @@ namespace MaykerStudio.SceneThumbnails
             SceneView.duringSceneGui += OnSceneViewGui;
             EditorApplication.hierarchyChanged += OnHierarchyChanged;
             Undo.undoRedoPerformed += OnUndoRedoPerformed;
+
+            // Re-warm the capture settings store after domain reloads so menu/batch
+            // paths keep using the window's configured settings even when the
+            // window is not reopened since the reload. BuildSettings reads only
+            // serialized fields, which are restored before OnEnable.
+            SceneThumbnailCapture.RememberSettings(BuildSettings());
         }
 
         private void OnDisable()
@@ -301,6 +311,7 @@ namespace MaykerStudio.SceneThumbnails
             _lightingToggle = rootVisualElement.Q<Toggle>("lighting-toggle");
             _postfxToggle = rootVisualElement.Q<Toggle>("postfx-toggle");
             _captureUiToggle = rootVisualElement.Q<Toggle>("capture-ui-toggle");
+            _uiScaleSlider = rootVisualElement.Q<Slider>("ui-scale-slider");
             _layersMask = rootVisualElement.Q<MaskField>("layers-mask");
             _batchFolderRow = rootVisualElement.Q<VisualElement>("batch-folder-row");
             _batchFolderField = rootVisualElement.Q<TextField>("batch-folder-field");
@@ -468,6 +479,19 @@ namespace MaykerStudio.SceneThumbnails
                     MarkPreviewDirty();
                 });
             }
+            if (_uiScaleSlider != null)
+            {
+                _uiScaleSlider.RegisterValueChangedCallback(evt =>
+                {
+                    float snapped = Mathf.Round(evt.newValue / 0.05f) * 0.05f;
+                    if (Mathf.Abs(snapped - evt.newValue) > 0.0001f)
+                    {
+                        _uiScaleSlider.SetValueWithoutNotify(snapped);
+                    }
+                    _uiScale = snapped;
+                    MarkPreviewDirty();
+                });
+            }
             if (_layersMask != null)
             {
                 _layersMask.RegisterValueChangedCallback(evt =>
@@ -573,6 +597,10 @@ namespace MaykerStudio.SceneThumbnails
             if (_captureUiToggle != null)
             {
                 _captureUiToggle.SetValueWithoutNotify(_captureUi);
+            }
+            if (_uiScaleSlider != null)
+            {
+                _uiScaleSlider.SetValueWithoutNotify(_uiScale);
             }
             if (_layersMask != null)
             {
@@ -763,9 +791,16 @@ namespace MaykerStudio.SceneThumbnails
                 cam.backgroundColor = settings.BackgroundColor;
                 cam.cullingMask = settings.layerMask;
 
-                SceneThumbnailCapture.UiCaptureSession uiSession = settings.CaptureUi
-                    ? SceneThumbnailCapture.UiCaptureSession.Begin(cam)
-                    : null;
+                // In composite mode the overlay canvases are left untouched during
+                // the scene pass; the UI is rendered separately at SceneView aspect
+                // and composited after the readback (CompositeSceneViewUi below).
+                bool compositeEligible = SceneThumbnailCapture.IsSceneViewUiCompositeEligible(
+                    settings
+                );
+                SceneThumbnailCapture.UiCaptureSession uiSession =
+                    settings.CaptureUi && !compositeEligible
+                        ? SceneThumbnailCapture.UiCaptureSession.Begin(cam, settings.UiScale)
+                        : null;
                 try
                 {
                     if (settings.UseLightingOverride)
@@ -806,6 +841,22 @@ namespace MaykerStudio.SceneThumbnails
                 _livePreviewTexture.ReadPixels(new Rect(0, 0, previewWidth, previewHeight), 0, 0);
                 _livePreviewTexture.Apply();
                 RenderTexture.active = prevActive;
+
+                // Composite the UI rendered at SceneView aspect when eligible; the
+                // helper re-checks eligibility and returns the input unchanged on
+                // any failure (canvas restore included), so only replace on differ.
+                if (compositeEligible)
+                {
+                    Texture2D composite = SceneThumbnailCapture.CompositeSceneViewUi(
+                        settings,
+                        _livePreviewTexture
+                    );
+                    if (composite != _livePreviewTexture)
+                    {
+                        UnityEngine.Object.DestroyImmediate(_livePreviewTexture);
+                        _livePreviewTexture = composite;
+                    }
+                }
 
                 UnityEngine.Object.DestroyImmediate(tempGo);
 
@@ -1360,6 +1411,10 @@ namespace MaykerStudio.SceneThumbnails
                 );
                 return;
             }
+            // Snapshot the current UI settings before the pump starts; the pump
+            // reads the store once in StartBatchPump so mid-batch UI edits cannot
+            // drift per-scene captures.
+            SceneThumbnailCapture.RememberSettings(BuildSettings());
             string error;
             if (!SceneThumbnailBatchMenus.TryStartFolderBatch(_batchFolderPath, out error))
             {
@@ -1618,6 +1673,7 @@ namespace MaykerStudio.SceneThumbnails
                 }
 
                 CaptureSettings settings = BuildSettings();
+                SceneThumbnailCapture.RememberSettings(settings);
                 CaptureResult result = SceneThumbnailCapture.Capture(settings);
                 if (!result.Success)
                 {
@@ -1819,6 +1875,7 @@ namespace MaykerStudio.SceneThumbnails
             settings.BackgroundMode = _backgroundMode;
             settings.WantPostProcessing = _wantPostProcessing;
             settings.CaptureUi = _captureUi;
+            settings.UiScale = _uiScale;
             settings.layerMask = _layerMask;
             return settings;
         }
