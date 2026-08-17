@@ -101,9 +101,9 @@ namespace MaykerStudio.UniThumb
         /// wave0-probe-report.md): an ARGB32 UI RenderTexture holds PREMULTIPLIED
         /// color (rgb == a*C exactly), so the composite uses
         /// out.rgb = ui.rgb + scene.rgb * (1 - ui.a); out.a = 255. The
-        /// straight-alpha branch stays behind the const for a one-line fallback.
+        /// straight-alpha branch stays behind the field for a one-line fallback.
         /// </summary>
-        private const bool k_UiBlendPremultiplied = true;
+        private static readonly bool s_UiBlendPremultiplied = true;
 
         #endregion
 
@@ -232,7 +232,7 @@ namespace MaykerStudio.UniThumb
         /// it from the camera's near plane instead. Blend rationale: wave-0
         /// probe P1 proved the ARGB32 UI RT holds premultiplied color (rgb ==
         /// a*C), so out.rgb = ui.rgb + scene.rgb * (1 - ui.a) behind
-        /// k_UiBlendPremultiplied; the straight branch stays for a one-line
+        /// s_UiBlendPremultiplied; the straight branch stays for a one-line
         /// fallback flip.
         /// </summary>
         public static Texture2D CompositeSceneViewUi(
@@ -411,7 +411,7 @@ namespace MaykerStudio.UniThumb
                         float r;
                         float g;
                         float b;
-                        if (k_UiBlendPremultiplied)
+                        if (s_UiBlendPremultiplied)
                         {
                             // Premultiplied (probe P1): ui.rgb already holds a*C;
                             // premultiplied rgb <= a so the sum cannot exceed 1
