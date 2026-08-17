@@ -23,6 +23,7 @@ UniThumb is an editor tool for Unity that renders thumbnail images of scenes and
 
 - Unity 6000.4.8f1 (Unity 6) or newer
 - Any render pipeline (Built-in, URP, HDRP); no render pipeline package is required
+- UGUI is required (the tool captures and generates UI via CanvasScaler, GraphicRaycaster, Image, Text) and is included with every standard Unity project; no extra install needed
 - Editor-only tool; nothing ships in builds
 
 URP post-processing is enabled via reflection when URP is present; a missing URP degrades gracefully instead of failing compilation.

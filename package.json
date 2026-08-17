@@ -10,7 +10,5 @@
     "url": "https://maykedev.com",
     "email": "maykerstudio@proton.me"
   },
-  "dependencies": {
-    "com.unity.ugui": "2.0.0"
-  }
+  "dependencies": {}
 }
