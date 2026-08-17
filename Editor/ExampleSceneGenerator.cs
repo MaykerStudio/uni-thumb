@@ -531,6 +531,10 @@ namespace MaykerStudio.UniThumb
                 Shader particleShader = Shader.Find("Particles/Universal Render Pipeline/Unlit");
                 if (particleShader == null)
                 {
+                    particleShader = Shader.Find("HDRP/Unlit");
+                }
+                if (particleShader == null)
+                {
                     particleShader = Shader.Find("Particles/Standard Unlit");
                 }
                 if (particleShader != null)
@@ -624,9 +628,13 @@ namespace MaykerStudio.UniThumb
             {
                 return urpShader;
             }
-            Debug.LogWarning(
-                "[UniThumb] URP Lit shader not found. Falling back to Standard shader."
-            );
+            Debug.LogWarning("[UniThumb] URP Lit shader not found. Trying HDRP/Lit.");
+            Shader hdrpShader = Shader.Find("HDRP/Lit");
+            if (hdrpShader != null)
+            {
+                return hdrpShader;
+            }
+            Debug.LogWarning("[UniThumb] No supported Lit shader found (URP/HDRP/Standard).");
             return Shader.Find("Standard");
         }
 
