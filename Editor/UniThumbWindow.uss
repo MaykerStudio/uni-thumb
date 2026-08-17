@@ -1,0 +1,336 @@
+.theme-light {
+    --stt-bg: #d8d8dc;
+    --stt-panel: #f0f0f2;
+    --stt-text: #1a1a1a;
+    --stt-text-secondary: #5a5a5a;
+    --stt-border: #a0a0a6;
+    --stt-accent: #0078d7;
+    --stt-accent-tint: rgba(0, 120, 215, 0.12);
+    --stt-secondary: #2e8b57;
+    --stt-secondary-tint: rgba(46, 139, 87, 0.12);
+    --stt-error: #c0392b;
+    --stt-badge-bg: #fff3cd;
+    --stt-badge-text: #664d03;
+}
+
+.theme-dark {
+    --stt-bg: #383838;
+    --stt-panel: #2b2b2b;
+    --stt-text: #d6d6d6;
+    --stt-text-secondary: #ababab;
+    --stt-border: #505050;
+    --stt-accent: #4f8fff;
+    --stt-accent-tint: rgba(79, 143, 255, 0.16);
+    --stt-secondary: #5cb85c;
+    --stt-secondary-tint: rgba(92, 184, 92, 0.16);
+    --stt-error: #ff6b6b;
+    --stt-badge-bg: #5c4a00;
+    --stt-badge-text: #ffe082;
+}
+
+.stt-root {
+    flex-grow: 1;
+    flex-direction: column;
+    background-color: var(--stt-bg);
+}
+
+.stt-scroll {
+    flex-grow: 1;
+}
+
+.stt-scroll .unity-scroll-view__content-container {
+    padding-top: 8px;
+}
+
+/* TabView layout - explicit flex chain (tab restructure) */
+TemplateContainer {
+    flex-grow: 1;
+}
+
+.unity-tab-view {
+    flex-grow: 1;
+}
+
+.unity-tab-view__content-container {
+    flex-grow: 1;
+}
+
+.unity-tab {
+    flex-grow: 1;
+}
+
+.unity-tab__content-container {
+    flex-grow: 1;
+}
+
+.stt-section {
+    padding: 0 8px;
+    margin-bottom: 4px;
+}
+
+.stt-card {
+    background-color: var(--stt-panel);
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: var(--stt-border);
+    padding: 6px 8px;
+    margin: 0 8px 8px;
+}
+
+.stt-card:hover {
+    border-color: var(--stt-accent);
+}
+
+.stt-card-header-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+    border-bottom-width: 1px;
+    border-bottom-color: color-mix(in srgb, var(--stt-border) 60%, var(--stt-text-secondary));
+}
+
+.stt-section-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.stt-header {
+    padding: 0 8px;
+    flex-shrink: 0;
+    margin-bottom: 4px;
+}
+
+.stt-section-header {
+    font-size: 11px;
+    -unity-font-style: bold;
+    color: var(--stt-text);
+    margin: 0;
+    padding: 0;
+}
+
+.stt-scene-path {
+    font-size: 11px;
+    color: var(--stt-text-secondary);
+    white-space: normal;
+    margin-bottom: 2px;
+}
+
+.stt-mini {
+    font-size: 11px;
+    color: var(--stt-text-secondary);
+}
+
+.stt-hint {
+    margin-top: 2px;
+}
+
+.stt-error-text {
+    color: var(--stt-error);
+}
+
+.stt-hidden {
+    display: none;
+}
+
+.stt-bottom-bar {
+    flex-shrink: 0;
+    flex-direction: row;
+    padding: 6px 8px;
+    border-top-width: 1px;
+    border-top-color: var(--stt-border);
+    align-items: center;
+}
+
+.stt-empty-label {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: var(--stt-text-secondary);
+}
+
+.stt-preview-wrap {
+    width: 100%;
+    max-width: 120px;
+    flex-shrink: 0;
+    align-self: center;
+}
+
+.stt-preview-box {
+    width: 100%;
+    aspect-ratio: 1;
+    background-color: var(--stt-bg);
+    border-width: 1px;
+    border-color: var(--stt-border);
+}
+
+.stt-preview-box:hover {
+    border-color: var(--stt-accent);
+}
+
+.stt-preview-image {
+    width: 100%;
+    height: 100%;
+    flex-shrink: 0;
+}
+
+.stt-caption-row {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.stt-caption {
+    font-size: 11px;
+    color: var(--stt-text-secondary);
+}
+
+.stt-badge {
+    font-size: 10px;
+    color: var(--stt-badge-text);
+    background-color: var(--stt-badge-bg);
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-left: 6px;
+}
+
+.stt-orbit-controls {
+    margin-top: 2px;
+    border-left-width: 2px;
+    border-left-color: var(--stt-accent);
+    padding-left: 8px;
+}
+
+.stt-presets-row {
+    flex-direction: row;
+    margin-top: 6px;
+    gap: 4px;
+}
+
+.stt-preset-button {
+    flex-grow: 1;
+}
+
+.stt-preset-button:hover {
+    background-color: var(--stt-accent-tint);
+}
+
+
+
+.stt-batch-folder-row {
+    flex-direction: row;
+    align-items: center;
+}
+
+.stt-batch-folder-field {
+    flex-grow: 1;
+    min-width: 0;
+    margin-right: 4px;
+}
+
+.stt-batch-folder-row.stt-drag-over {
+    background-color: var(--stt-accent-tint);
+    border-width: 1px;
+    border-style: dashed;
+    border-color: var(--stt-accent);
+    padding: 2px;
+}
+
+.stt-indented-button {
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+.stt-generate-button {
+    height: 28px;
+    flex-grow: 1;
+    background-color: var(--stt-accent);
+    color: #fff;
+    -unity-font-style: bold;
+}
+
+.stt-generate-button:hover {
+    background-color: color-mix(in srgb, var(--stt-accent) 85%, white);
+}
+
+.stt-generate-folder-button {
+    height: 28px;
+    flex-shrink: 0;
+    background-color: var(--stt-secondary);
+    color: #fff;
+    -unity-font-style: bold;
+}
+
+.stt-generate-folder-button:hover {
+    background-color: color-mix(in srgb, var(--stt-secondary) 85%, white);
+}
+
+.stt-danger-button {
+    height: 28px;
+    flex-shrink: 0;
+    background-color: var(--stt-error);
+    color: #fff;
+    -unity-font-style: bold;
+}
+
+.stt-danger-button:hover {
+    background-color: color-mix(in srgb, var(--stt-error) 85%, white);
+}
+
+.stt-batch-progress {
+    margin-top: 6px;
+}
+
+.stt-progress-bar {
+    height: 16px;
+}
+
+.stt-progress-bar .unity-progress-bar__progress {
+    background-color: var(--stt-accent);
+}
+
+.stt-batch-progress-caption {
+    margin-top: 2px;
+}
+
+.stt-result-help {
+    margin-top: 6px;
+}
+
+.stt-status-help {
+    margin: 6px 8px 2px;
+}
+
+.stt-footer {
+    font-size: 10px;
+    color: var(--stt-text-secondary);
+    padding: 4px 8px 6px;
+    border-top-width: 1px;
+    border-top-color: var(--stt-border);
+}
+
+.stt-folder-picker-search {
+    position: relative;
+    margin: 4px;
+}
+
+.stt-folder-picker-placeholder {
+    position: absolute;
+    left: 7px;
+    top: 4px;
+    font-size: 11px;
+    color: var(--stt-text-secondary);
+}
+
+.stt-folder-picker-list {
+    flex-grow: 1;
+}
+
+.stt-folder-row {
+    padding: 2px 6px;
+    -unity-text-align: middle-left;
+}

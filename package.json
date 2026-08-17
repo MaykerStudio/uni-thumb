@@ -1,0 +1,16 @@
+{
+  "name": "com.maykerstudio.unithumb",
+  "displayName": "UniThumb",
+  "version": "1.0.0",
+  "unity": "6000.4",
+  "unityRelease": "8f1",
+  "description": "Editor tool that renders thumbnails of scenes and draws them on the scene assets in the Unity Project window, so scenes are visually identifiable at a glance.",
+  "author": {
+    "name": "MaykerStudio",
+    "url": "https://maykedev.com",
+    "email": "maykerstudio@proton.me"
+  },
+  "dependencies": {
+    "com.unity.ugui": "2.0.0"
+  }
+}
