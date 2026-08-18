@@ -39,10 +39,17 @@ namespace MaykerStudio.UniThumb
             "Thumbnails are stored in Library/SceneThumbnails. Machine-local and regenerable, not shared through Git.";
         private const string k_TrackedInAssetsHint =
             "Thumbnails are stored in Assets/UniThumb/Thumbnails and can be committed to Git to share them. Switching storage mode moves existing thumbnails to the new location.";
+#if UNITY_6000_0_OR_NEWER
         private static string UxmlPath =>
             UniThumbPackagePaths.EditorFolderAssetPath + "/UniThumbWindow.uxml";
         private static string UssPath =>
             UniThumbPackagePaths.EditorFolderAssetPath + "/UniThumbWindow.uss";
+#else
+        private static string UxmlPath =>
+            UniThumbPackagePaths.EditorFolderAssetPath + "/UniThumbWindow.2022.uxml";
+        private static string UssPath =>
+            UniThumbPackagePaths.EditorFolderAssetPath + "/UniThumbWindow.2022.uss";
+#endif
         private const int k_PreviewRefetchAttempts = 4;
         private const long k_PreviewRefetchDelayMs = 100;
         private const int k_MaxFolderMenuEntries = 500;
@@ -179,6 +186,12 @@ namespace MaykerStudio.UniThumb
         private HelpBox _batchResultHelp;
         private HelpBox _statusHelp;
         private Label _footerLabel;
+#if !UNITY_6000_0_OR_NEWER
+        private Button _sceneTabButton;
+        private Button _settingsTabButton;
+        private ScrollView _sceneTabScroll;
+        private ScrollView _settingsTabScroll;
+#endif
 
         #endregion
 
@@ -273,6 +286,9 @@ namespace MaykerStudio.UniThumb
             ApplySectionIcons();
             _wasBatchRunning = UniThumbBatchMenus.IsBatchRunning;
             PushState();
+#if !UNITY_6000_0_OR_NEWER
+            SelectTab(0);
+#endif
         }
 
         #endregion
@@ -336,6 +352,12 @@ namespace MaykerStudio.UniThumb
             _batchResultHelp = rootVisualElement.Q<HelpBox>("batch-result-help");
             _statusHelp = rootVisualElement.Q<HelpBox>("status-help");
             _footerLabel = rootVisualElement.Q<Label>("footer-label");
+#if !UNITY_6000_0_OR_NEWER
+            _sceneTabButton = rootVisualElement.Q<Button>("scene-tab-button");
+            _settingsTabButton = rootVisualElement.Q<Button>("settings-tab-button");
+            _sceneTabScroll = rootVisualElement.Q<ScrollView>("scene-tab-scroll");
+            _settingsTabScroll = rootVisualElement.Q<ScrollView>("settings-tab-scroll");
+#endif
         }
 
         private void ApplySectionIcons()
@@ -355,13 +377,20 @@ namespace MaykerStudio.UniThumb
             {
                 return;
             }
-            GUIContent content = EditorGUIUtility.IconContent(iconName);
-            if (content == null || content.image == null)
+            try
             {
-                return;
+                GUIContent content = EditorGUIUtility.IconContent(iconName);
+                if (content == null || content.image == null)
+                {
+                    return;
+                }
+                icon.image = content.image;
+                icon.EnableInClassList("stt-hidden", false);
             }
-            icon.image = content.image;
-            icon.EnableInClassList("stt-hidden", false);
+            catch
+            {
+                // Icon not available in this Unity version; leave hidden.
+            }
         }
 
         private void WireCallbacks()
@@ -544,12 +573,32 @@ namespace MaykerStudio.UniThumb
             {
                 _cancelBatchButton.clicked += CancelBatch;
             }
+#if !UNITY_6000_0_OR_NEWER
+            if (_sceneTabButton != null)
+            {
+                _sceneTabButton.clicked += () => SelectTab(0);
+            }
+            if (_settingsTabButton != null)
+            {
+                _settingsTabButton.clicked += () => SelectTab(1);
+            }
+#endif
             if (_batchFolderRow != null)
             {
                 RegisterBatchFolderDragDrop(_batchFolderRow);
             }
             rootVisualElement.RegisterCallback<KeyDownEvent>(OnKeyDown, TrickleDown.TrickleDown);
         }
+
+#if !UNITY_6000_0_OR_NEWER
+        private void SelectTab(int index)
+        {
+            _sceneTabScroll?.EnableInClassList("stt-hidden", index != 0);
+            _settingsTabScroll?.EnableInClassList("stt-hidden", index != 1);
+            _sceneTabButton?.EnableInClassList("stt-tab-selected", index == 0);
+            _settingsTabButton?.EnableInClassList("stt-tab-selected", index == 1);
+        }
+#endif
 
         private void PushState()
         {
