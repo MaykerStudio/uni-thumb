@@ -21,7 +21,7 @@ UniThumb is an editor tool for Unity that renders thumbnail images of scenes and
 
 ## Requirements
 
-- Unity 6000.4.8f1 (Unity 6) or newer
+- Unity 2022.3 LTS or newer (Unity 6 recommended for the original TabView UI)
 - Any render pipeline (Built-in, URP, HDRP); no render pipeline package is required
 - UGUI is required (the tool captures and generates UI via CanvasScaler, GraphicRaycaster, Image, Text) and is included with every standard Unity project; no extra install needed
 - Editor-only tool; nothing ships in builds
@@ -46,16 +46,18 @@ Package the repository into a `.tgz` (scripts/pack-unithumb.ps1 does this; `npm 
 
 ### Embedded (development only)
 
-The dev project under Project/ consumes the root package directly via a `file:../..` reference in Project/Packages/manifest.json. This is a development-only setup; the Project/ tree is gitignored and not part of the package.
+The dev project under `Project~/UniThumb Dev` installs the root package via the git URL `https://github.com/MaykerStudio/uni-thumb.git`, or a dev-only `file:` reference when testing local changes. The trailing `~` keeps the folder out of Unity imports and package tarballs; the whole tree is gitignored and not part of the package.
 
 ## Usage
 
-Open the window via `Window > UniThumb`. The window has two tabs:
+Open the window via `Window > UniThumb`. The window has two sections. On Unity 6 these are native TabView tabs; on Unity 2022.3 they are header buttons that switch between the Scene Thumbnail and Settings sections:
 
 - **Scene Thumbnail**: capture settings, a live preview, and generate/delete actions for the active scene
 - **Settings**: storage mode and related options
 
 ![UniThumb window](images/ui-main-window.png)
+
+Note: screenshots show the Unity 6 (TabView) layout. Unity 2022.3 uses a header-button switcher instead of tabs.
 
 Keyboard shortcuts (inside the window):
 
@@ -89,7 +91,7 @@ The window also has a batch section: choose a folder (or use the current scene's
 
 Thumbnails are PNG files named after the scene GUID, so there are no `.meta` files and no Project window pollution. No texture assets are created; the overlay is drawn by the tool, so there are no import settings and no disk bloat.
 
-Two storage modes, selected in the Settings tab:
+Two storage modes, selected in the Settings section:
 
 - **Library cache** (default): `Library/SceneThumbnails/{sceneGuid}.png`, outside `Assets`. Machine-local and regenerable; deleting `Library/SceneThumbnails/` and running `Assets > Refresh All UniThumbs` regenerates everything.
 - **Tracked in Assets**: `Assets/UniThumb/Thumbnails/`. Thumbnails can be committed to Git to share them with the team.
@@ -113,16 +115,16 @@ root/                    <- the UPM package (package.json at the root)
   LICENSE.md             BSD 3-Clause license
   images/                README screenshots
   scripts/               pack-unithumb.ps1 (tarball build)
-  Project/               Unity dev project (gitignored: Assets/, ProjectSettings/, Packages/)
+  Project~/UniThumb Dev/ Unity dev project (gitignored via the trailing ~; installs the package via git URL)
   dist/                  tarball output (gitignored)
   docs/                  plan artifacts, never shipped
 ```
 
 ## Development
 
-- The Unity dev project lives in Project/ and references the root package via `"com.maykerstudio.unithumb": "file:../.."` in Project/Packages/manifest.json.
-- scripts/pack-unithumb.ps1 packs the repo root into `dist/com.maykerstudio.unithumb-<version>.tgz` (npm pack primary, tar and zip fallbacks). It excludes Project/, docs/, scripts/, dist/, AGENTS.md, and all .meta/.unity/.prefab files; images/ is included so README images resolve in installed packages.
-- Root package files (package.json, Editor/, README.md, CHANGELOG.md, LICENSE.md, images/) are committed; Project/, docs/, and Packages/*.json stay out of commits.
+- The Unity dev project lives in `Project~/UniThumb Dev` and installs the root package via the git URL `https://github.com/MaykerStudio/uni-thumb.git` (or a dev-only `file:` reference when testing local changes). The trailing `~` excludes the folder from Unity imports and package tarballs.
+- scripts/pack-unithumb.ps1 packs the repo root into `dist/com.maykerstudio.unithumb-<version>.tgz` (npm pack primary, tar and zip fallbacks). It excludes the Project/ and Project~/ dev trees, docs/, scripts/, dist/, AGENTS.md, and all .meta/.unity/.prefab files; images/ is included so README images resolve in installed packages.
+- Root package files (package.json, Editor/, README.md, CHANGELOG.md, LICENSE.md, images/) are committed; Project~/, docs/, and Packages/*.json stay out of commits.
 
 ## License
 

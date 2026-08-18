@@ -2,6 +2,12 @@
 
 All notable changes to UniThumb are documented in this file.
 
+## [Unreleased]
+
+- Added Unity 2022.3 LTS support (fallback header-button UI when TabView is unavailable)
+- Unity 6 (6000.4+) retains the original TabView-based UI
+- Fixed UGUI compile failure on Unity 6 by adding explicit `UnityEngine.UI` asmdef reference
+
 ## [1.0.0] - 2026-08-16
 
 Initial release.
