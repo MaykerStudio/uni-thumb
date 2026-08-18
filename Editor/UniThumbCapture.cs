@@ -1148,43 +1148,67 @@ namespace MaykerStudio.UniThumb
         }
 
         /// <summary>
-        /// Adds UniversalAdditionalCameraData (URP) with renderPostProcessing=true
-        /// via reflection so the asmdef can stay dependency-free (references: []).
-        /// Returns false (with a warning naming the missing type) when URP/UACD is
-        /// unavailable; the capture then continues without post-processing.
+        /// Adds render-pipeline camera data via reflection so the asmdef can stay
+        /// dependency-free (references: []).
+        /// URP: UniversalAdditionalCameraData with renderPostProcessing=true.
+        /// HDRP: HDAdditionalCameraData with volumeLayerMask set to Everything.
+        /// Returns false (with a warning naming the missing type) when neither
+        /// pipeline is available; the capture then continues without post-processing.
         /// </summary>
         private static bool TryEnablePostProcessing(Camera cam)
         {
+            // URP
             const string k_UacdTypeName =
                 "UnityEngine.Rendering.Universal.UniversalAdditionalCameraData, Unity.RenderPipelines.Universal.Runtime";
+            // HDRP
+            const string k_HdacTypeName =
+                "UnityEngine.Rendering.HighDefinition.HDAdditionalCameraData, Unity.RenderPipelines.HighDefinition.Runtime";
             try
             {
                 System.Type uacdType = System.Type.GetType(k_UacdTypeName);
-                if (uacdType == null)
+                if (uacdType != null)
                 {
-                    Debug.LogWarning(
-                        k_LogPrefix
-                            + "Cannot enable post-processing: UniversalAdditionalCameraData type not found ("
-                            + k_UacdTypeName
-                            + "); capturing without post-processing."
+                    Component component = cam.gameObject.AddComponent(uacdType);
+                    System.Reflection.PropertyInfo property = uacdType.GetProperty(
+                        "renderPostProcessing",
+                        System.Reflection.BindingFlags.Public
+                            | System.Reflection.BindingFlags.Instance
                     );
-                    return false;
-                }
-                Component component = cam.gameObject.AddComponent(uacdType);
-                System.Reflection.PropertyInfo property = uacdType.GetProperty(
-                    "renderPostProcessing",
-                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance
-                );
-                if (property == null || !property.CanWrite)
-                {
+                    if (property != null && property.CanWrite)
+                    {
+                        property.SetValue(component, true, null);
+                        return true;
+                    }
                     Debug.LogWarning(
                         k_LogPrefix
                             + "Cannot enable post-processing: renderPostProcessing property not found on UniversalAdditionalCameraData; capturing without post-processing."
                     );
                     return false;
                 }
-                property.SetValue(component, true, null);
-                return true;
+
+                // HDRP fallback
+                System.Type hdacType = System.Type.GetType(k_HdacTypeName);
+                if (hdacType != null)
+                {
+                    Component component = cam.gameObject.AddComponent(hdacType);
+                    // Set volumeLayerMask to Everything (-1) so all volumes affect this camera.
+                    System.Reflection.PropertyInfo maskProp = hdacType.GetProperty(
+                        "volumeLayerMask",
+                        System.Reflection.BindingFlags.Public
+                            | System.Reflection.BindingFlags.Instance
+                    );
+                    if (maskProp != null && maskProp.CanWrite)
+                    {
+                        maskProp.SetValue(component, -1, null);
+                    }
+                    return true;
+                }
+
+                Debug.LogWarning(
+                    k_LogPrefix
+                        + "Cannot enable post-processing: neither UniversalAdditionalCameraData (URP) nor HDAdditionalCameraData (HDRP) type found; capturing without post-processing."
+                );
+                return false;
             }
             catch (System.Exception exception)
             {
