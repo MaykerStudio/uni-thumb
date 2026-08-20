@@ -338,6 +338,8 @@ namespace MaykerStudio.UniThumb
                     return;
                 }
 
+                UniThumbStorage.SaveFingerprint(scenePath, UniThumbFingerprint.Compute());
+
                 UniThumbIconService.ApplyIcon(scenePath);
                 string suffix = string.IsNullOrEmpty(result.Warning)
                     ? "."
@@ -865,7 +867,10 @@ namespace MaykerStudio.UniThumb
         /// <summary>
         /// True when the scene has no thumbnail in storage (missing) or its
         /// LastWriteTimeUtc no longer matches the ticks recorded at save time
-        /// (outdated per UniThumbStorage invalidation).
+        /// (outdated per UniThumbStorage invalidation), or when timestamps match
+        /// but the scene fingerprint has changed (content stale). Legacy thumbnails
+        /// without a stored fingerprint are never flagged stale by the fingerprint
+        /// path.
         /// </summary>
         private static bool IsStale(string scenePath)
         {
@@ -880,7 +885,19 @@ namespace MaykerStudio.UniThumb
             }
             long liveTicks = File.GetLastWriteTimeUtc(AbsolutePath(scenePath)).Ticks;
             long storedTicks = ReadPrefsTicks(guid);
-            return liveTicks != storedTicks;
+            if (liveTicks != storedTicks)
+            {
+                return true;
+            }
+
+            // Timestamps match: fingerprint is the secondary staleness signal.
+            UniThumbFingerprint.SceneFingerprint storedFp = UniThumbStorage.LoadFingerprint(guid);
+            if (storedFp == default)
+            {
+                return false;
+            }
+            UniThumbFingerprint.SceneFingerprint currentFp = UniThumbFingerprint.Compute();
+            return !storedFp.Equals(currentFp);
         }
 
         /// <summary>
@@ -977,19 +994,31 @@ namespace MaykerStudio.UniThumb
                     {
                         s_State.WaitingForShaderCompile = false;
                         s_State.WaitStartedAt = 0.0;
-                        ShowProgress(
-                            string.Format(k_ProgressMessageFormat, s_State.CurrentScenePath)
-                        );
+                        if (
+                            ShowProgress(
+                                string.Format(k_ProgressMessageFormat, s_State.CurrentScenePath)
+                            )
+                        )
+                        {
+                            s_State.CancelRequested = true;
+                            return;
+                        }
                         ProcessSceneCapture(s_State.CurrentScenePath);
                     }
                     else
                     {
-                        ShowProgress(
-                            string.Format(
-                                k_ShaderCompileProgressMessageFormat,
-                                s_State.CurrentScenePath
+                        if (
+                            ShowProgress(
+                                string.Format(
+                                    k_ShaderCompileProgressMessageFormat,
+                                    s_State.CurrentScenePath
+                                )
                             )
-                        );
+                        )
+                        {
+                            s_State.CancelRequested = true;
+                            return;
+                        }
                     }
                     return;
                 }
@@ -1006,7 +1035,13 @@ namespace MaykerStudio.UniThumb
                 ProcessScene(scenePath);
                 if (s_State.WaitingForShaderCompile)
                 {
-                    ShowProgress(string.Format(k_ShaderCompileProgressMessageFormat, scenePath));
+                    if (
+                        ShowProgress(string.Format(k_ShaderCompileProgressMessageFormat, scenePath))
+                    )
+                    {
+                        s_State.CancelRequested = true;
+                        return;
+                    }
                 }
             }
             catch (Exception exception)
@@ -1082,6 +1117,7 @@ namespace MaykerStudio.UniThumb
                     );
                     return;
                 }
+                UniThumbStorage.SaveFingerprint(scenePath, UniThumbFingerprint.Compute());
                 s_State.WroteThumbnails = true;
 
                 // Verification: the PNG must be decodable as a Texture2D, not just
@@ -1152,11 +1188,11 @@ namespace MaykerStudio.UniThumb
         /// Progress bar with the current processed/total fraction; callers pass
         /// the message (normal or shader-compile-wait).
         /// </summary>
-        private static void ShowProgress(string message)
+        private static bool ShowProgress(string message)
         {
             float progress =
                 s_State.TotalScenes > 0 ? s_State.ProcessedCount / (float)s_State.TotalScenes : 1f;
-            EditorUtility.DisplayProgressBar(k_ProgressTitle, message, progress);
+            return EditorUtility.DisplayCancelableProgressBar(k_ProgressTitle, message, progress);
         }
 
         /// <summary>

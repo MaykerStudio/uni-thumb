@@ -40,6 +40,7 @@ namespace MaykerStudio.UniThumb
         private const string k_TrackedParentFolderName = "UniThumb";
         private const string k_TrackedFolderName = "Thumbnails";
         private const string k_PrefsPrefix = "SceneThumbs.v4";
+        private const string k_FingerprintExtension = ".fp";
 
         // t11 size cap: 512px thumbnails are ~1MB each, 4096px ones ~64MB each.
         // Insertion evicts least-recently-touched entries while over the cap.
@@ -356,6 +357,7 @@ namespace MaykerStudio.UniThumb
 
             Evict(guid);
             EditorPrefs.DeleteKey(KeyFor(guid));
+            DeleteFingerprint(guid);
             string pngPath = PngPathFor(guid);
             if (!File.Exists(pngPath))
             {
@@ -492,6 +494,13 @@ namespace MaykerStudio.UniThumb
                 {
                     File.Copy(file, target, false);
                     File.Delete(file);
+                    string fpSource = Path.ChangeExtension(file, k_FingerprintExtension);
+                    if (File.Exists(fpSource))
+                    {
+                        string fpTarget = Path.Combine(targetFolder, Path.GetFileName(fpSource));
+                        File.Copy(fpSource, fpTarget, false);
+                        File.Delete(fpSource);
+                    }
                     if (sourceIsTracked)
                     {
                         string meta = file + ".meta";
@@ -529,12 +538,18 @@ namespace MaykerStudio.UniThumb
 
         /// <summary>
         /// True when the scene file's LastWriteTimeUtc ticks differ from the ticks
-        /// in the invalidation record (EditorPrefs key SceneThumbs.v4.{guid}).
-        /// False for null/empty paths, unknown GUIDs, or scenes with no record yet
-        /// (nothing saved = not stale). Callers: mutation points only (after
-        /// Generate / after a batch), never on the UI refresh path.
+        /// in the invalidation record (EditorPrefs key SceneThumbs.v4.{guid}),
+        /// OR when timestamps match but the scene fingerprint has changed (content
+        /// stale). The optional computeFingerprint callback is the secondary signal:
+        /// when provided and timestamps match, a stored fingerprint is compared
+        /// against the freshly computed one. Legacy thumbnails (no stored fingerprint)
+        /// are never flagged stale by the fingerprint path. Callers: mutation points
+        /// only (after Generate / after a batch), never on the UI refresh path.
         /// </summary>
-        public static bool IsSceneStale(string scenePath)
+        public static bool IsSceneStale(
+            string scenePath,
+            Func<UniThumbFingerprint.SceneFingerprint> computeFingerprint = null
+        )
         {
             if (string.IsNullOrEmpty(scenePath))
             {
@@ -559,7 +574,102 @@ namespace MaykerStudio.UniThumb
                 return false;
             }
             long liveTicks = File.GetLastWriteTimeUtc(AbsoluteProjectPath(scenePath)).Ticks;
-            return storedTicks != liveTicks;
+            if (storedTicks != liveTicks)
+            {
+                return true;
+            }
+
+            // Timestamps match: fingerprint is the secondary staleness signal.
+            if (computeFingerprint == null)
+            {
+                return false;
+            }
+            UniThumbFingerprint.SceneFingerprint storedFp = LoadFingerprint(guid);
+            if (storedFp == default)
+            {
+                return false;
+            }
+            UniThumbFingerprint.SceneFingerprint currentFp = computeFingerprint();
+            return !storedFp.Equals(currentFp);
+        }
+
+        /// <summary>
+        /// Writes a scene fingerprint to a companion .fp file next to the PNG.
+        /// Called explicitly by callers after Save(); the Save signature is unchanged.
+        /// </summary>
+        public static void SaveFingerprint(
+            string scenePath,
+            UniThumbFingerprint.SceneFingerprint fp
+        )
+        {
+            string guid = AssetDatabase.AssetPathToGUID(scenePath);
+            if (string.IsNullOrEmpty(guid))
+            {
+                Debug.LogWarning(
+                    k_LogPrefix + "SaveFingerprint refused for '" + scenePath + "': empty GUID."
+                );
+                return;
+            }
+            string path = Path.Combine(ActiveFolderPath(), guid + k_FingerprintExtension);
+            try
+            {
+                EnsureFolder();
+                File.WriteAllBytes(path, fp.ToBytes());
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+        }
+
+        /// <summary>
+        /// Reads a scene fingerprint from the companion .fp file. Returns
+        /// default (all-zeros) when the file is missing or corrupted.
+        /// </summary>
+        public static UniThumbFingerprint.SceneFingerprint LoadFingerprint(string guid)
+        {
+            if (string.IsNullOrEmpty(guid))
+            {
+                return default;
+            }
+            string path = Path.Combine(ActiveFolderPath(), guid + k_FingerprintExtension);
+            try
+            {
+                byte[] data = File.ReadAllBytes(path);
+                return UniThumbFingerprint.SceneFingerprint.FromBytes(data);
+            }
+            catch (Exception)
+            {
+                return default;
+            }
+        }
+
+        /// <summary>
+        /// Deletes the companion .fp file for a scene GUID if it exists.
+        /// </summary>
+        public static void DeleteFingerprint(string guid)
+        {
+            if (string.IsNullOrEmpty(guid))
+            {
+                return;
+            }
+            string path = Path.Combine(ActiveFolderPath(), guid + k_FingerprintExtension);
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+
+        /// <summary>
+        /// Returns true when a companion .fp file exists for the given GUID.
+        /// </summary>
+        public static bool HasFingerprint(string guid)
+        {
+            if (string.IsNullOrEmpty(guid))
+            {
+                return false;
+            }
+            return File.Exists(Path.Combine(ActiveFolderPath(), guid + k_FingerprintExtension));
         }
 
         #endregion

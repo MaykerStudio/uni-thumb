@@ -136,6 +136,11 @@ namespace MaykerStudio.UniThumb
         private float _lastSceneViewSize;
         private float _lastSceneViewFov;
 
+        // Debounce: fingerprint checks on scene switch are skipped when less
+        // than 5 seconds have elapsed since the last switch, preventing stalls
+        // during rapid scene navigation.
+        private static DateTime s_LastSceneSwitchTime = DateTime.MinValue;
+
         #endregion
 
         #region UI Elements
@@ -217,6 +222,7 @@ namespace MaykerStudio.UniThumb
             }
             _batchFolderInputInvalid = false;
             EditorSceneManager.activeSceneChangedInEditMode += OnActiveSceneChangedInEditMode;
+            EditorSceneManager.sceneSaved += OnSceneSaved;
             UniThumbStorage.RegisterEviction(OnTextureEvicted);
             EditorApplication.update += OnBatchUpdateTick;
             SceneView.duringSceneGui += OnSceneViewGui;
@@ -236,6 +242,7 @@ namespace MaykerStudio.UniThumb
             EditorApplication.update -= RenderLivePreview;
             _previewDirty = false;
             EditorSceneManager.activeSceneChangedInEditMode -= OnActiveSceneChangedInEditMode;
+            EditorSceneManager.sceneSaved -= OnSceneSaved;
             SceneView.duringSceneGui -= OnSceneViewGui;
             EditorApplication.hierarchyChanged -= OnHierarchyChanged;
             Undo.undoRedoPerformed -= OnUndoRedoPerformed;
@@ -283,7 +290,7 @@ namespace MaykerStudio.UniThumb
 
             CacheElements();
             WireCallbacks();
-            ApplySectionIcons();
+            EditorApplication.delayCall += ApplySectionIcons;
             _wasBatchRunning = UniThumbBatchMenus.IsBatchRunning;
             PushState();
 #if !UNITY_6000_0_OR_NEWER
@@ -366,31 +373,41 @@ namespace MaykerStudio.UniThumb
             SetSectionIcon("stt-icon-resolution", "d_Settings Icon");
             SetSectionIcon("stt-icon-framing", "d_Camera Icon");
             SetSectionIcon("stt-icon-bgfx", "d_Skybox Icon");
-            SetSectionIcon("stt-icon-layers", "d_TagManager Icon");
+            SetSectionIcon(
+                "stt-icon-layers",
+                "filterbylabel",
+                "d_TagManager Icon",
+                "d_SortingLayer Icon",
+                "d_Layers Icon"
+            );
             SetSectionIcon("stt-icon-batch", "d_FolderOpened Icon");
         }
 
-        private void SetSectionIcon(string elementName, string iconName)
+        private void SetSectionIcon(string elementName, params string[] iconNames)
         {
             Image icon = rootVisualElement.Q<Image>(elementName);
             if (icon == null)
             {
                 return;
             }
-            try
+            foreach (string iconName in iconNames)
             {
-                GUIContent content = EditorGUIUtility.IconContent(iconName);
-                if (content == null || content.image == null)
+                try
                 {
-                    return;
+                    GUIContent content = EditorGUIUtility.IconContent(iconName);
+                    if (content != null && content.image != null)
+                    {
+                        icon.image = content.image;
+                        icon.EnableInClassList("stt-hidden", false);
+                        return;
+                    }
                 }
-                icon.image = content.image;
-                icon.EnableInClassList("stt-hidden", false);
+                catch
+                {
+                    // Icon not available in this Unity version; try next.
+                }
             }
-            catch
-            {
-                // Icon not available in this Unity version; leave hidden.
-            }
+            // No icon found; leave hidden.
         }
 
         private void WireCallbacks()
@@ -1264,6 +1281,26 @@ namespace MaykerStudio.UniThumb
             return _previewTexture != null;
         }
 
+        /// <summary>
+        /// Updates the staleness icon overlay in the Project window for the given GUID.
+        /// </summary>
+        private void UpdateStalenessIcon(string guid, bool isStale)
+        {
+            if (string.IsNullOrEmpty(guid))
+            {
+                return;
+            }
+            if (isStale)
+            {
+                UniThumbIconService.MarkStale(guid);
+            }
+            else
+            {
+                UniThumbIconService.ClearStale(guid);
+            }
+            EditorApplication.RepaintProjectWindow();
+        }
+
         private void UpdatePreviewUI()
         {
             bool hasPreview = _previewTexture != null;
@@ -1641,6 +1678,7 @@ namespace MaykerStudio.UniThumb
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
                 _previewTexture = UniThumbStorage.Load(scenePath);
                 _previewStale = UniThumbStorage.IsSceneStale(scenePath);
+                UpdateStalenessIcon(_previewGuid, _previewStale);
             }
             if (snapshot.Processed >= snapshot.Total)
             {
@@ -1792,6 +1830,25 @@ namespace MaykerStudio.UniThumb
             {
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
                 UniThumbStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
+
+                // Always check timestamp staleness (cheap file stat)
+                bool timestampStale = UniThumbStorage.IsSceneStale(scenePath);
+                // Fingerprint check is debounced (expensive FindObjectsByType)
+                if (
+                    timestampStale
+                    || (
+                        (DateTime.UtcNow - s_LastSceneSwitchTime).TotalSeconds > 5.0
+                        && _previewTexture != null
+                    )
+                )
+                {
+                    _previewStale = UniThumbStorage.IsSceneStale(
+                        scenePath,
+                        UniThumbFingerprint.Compute
+                    );
+                }
+                s_LastSceneSwitchTime = DateTime.UtcNow;
+                UpdateStalenessIcon(_previewGuid, _previewStale);
             }
             UpdateActiveSceneLabel();
             UpdatePreviewUI();
@@ -1810,6 +1867,31 @@ namespace MaykerStudio.UniThumb
             }
             _previewTexture = null;
             SchedulePreviewRefetch(k_PreviewRefetchAttempts);
+        }
+
+        /// <summary>
+        /// Called when the user explicitly saves the active scene. Always checks
+        /// fingerprint staleness (no debounce -- the user's save is a deliberate
+        /// action that may change the scene content without moving the file
+        /// timestamp in all cases).
+        /// </summary>
+        private void OnSceneSaved(Scene scene)
+        {
+            if (string.IsNullOrEmpty(_previewGuid))
+            {
+                return;
+            }
+            string scenePath = scene.path;
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                return;
+            }
+            _previewStale = UniThumbStorage.IsSceneStale(scenePath, UniThumbFingerprint.Compute);
+            UpdateStalenessIcon(_previewGuid, _previewStale);
+            if (_previewStale)
+            {
+                UpdatePreviewUI();
+            }
         }
 
         private void SchedulePreviewRefetch(int attemptsLeft)
@@ -1871,6 +1953,10 @@ namespace MaykerStudio.UniThumb
                     return;
                 }
 
+                // Record the scene fingerprint so future staleness checks can
+                // detect content changes even when the timestamp hasn't moved.
+                UniThumbStorage.SaveFingerprint(scenePath, UniThumbFingerprint.Compute());
+
                 // Match the menu-path ordering (UniThumbBatchMenus): apply the
                 // Project window icon immediately so the thumbnail shows without a
                 // domain reload or Refresh All. Mutation-point texture source:
@@ -1880,6 +1966,7 @@ namespace MaykerStudio.UniThumb
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
                 _previewTexture = UniThumbStorage.Load(scenePath);
                 _previewStale = false;
+                UpdateStalenessIcon(_previewGuid, false);
                 string sceneName = Path.GetFileNameWithoutExtension(scenePath);
                 string suffix = string.IsNullOrEmpty(result.Warning)
                     ? string.Empty
@@ -1938,6 +2025,7 @@ namespace MaykerStudio.UniThumb
             }
             _previewTexture = null;
             _previewStale = false;
+            UpdateStalenessIcon(_previewGuid, false);
             UpdateGenerateState();
             UpdatePreviewUI();
             MarkPreviewDirty();
@@ -2030,6 +2118,7 @@ namespace MaykerStudio.UniThumb
                 _previewGuid = AssetDatabase.AssetPathToGUID(scenePath);
                 UniThumbStorage.TryGetCachedTexture(_previewGuid, out _previewTexture);
             }
+            UpdateStalenessIcon(_previewGuid, false);
             UpdatePreviewUI();
         }
 

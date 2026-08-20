@@ -55,6 +55,7 @@ namespace MaykerStudio.UniThumb
         #region Fields
 
         private static readonly HashSet<string> s_GuidsWithThumbnails = new HashSet<string>();
+        private static readonly HashSet<string> s_StaleGuids = new HashSet<string>();
         private static readonly Queue<string> s_WarmQueue = new Queue<string>();
 
         /// <summary>
@@ -176,6 +177,38 @@ namespace MaykerStudio.UniThumb
             return count;
         }
 
+        /// <summary>
+        /// Marks a scene GUID as stale. The overlay will draw a warning indicator
+        /// on the thumbnail until ClearStale is called.
+        /// </summary>
+        public static void MarkStale(string guid)
+        {
+            if (!string.IsNullOrEmpty(guid))
+            {
+                s_StaleGuids.Add(guid);
+            }
+        }
+
+        /// <summary>
+        /// Clears the stale flag for a scene GUID. The warning indicator is removed
+        /// on the next Project window repaint.
+        /// </summary>
+        public static void ClearStale(string guid)
+        {
+            if (!string.IsNullOrEmpty(guid))
+            {
+                s_StaleGuids.Remove(guid);
+            }
+        }
+
+        /// <summary>
+        /// Returns true if the scene GUID is marked as stale.
+        /// </summary>
+        public static bool IsStale(string guid)
+        {
+            return !string.IsNullOrEmpty(guid) && s_StaleGuids.Contains(guid);
+        }
+
         #endregion
 
         #region Private Methods
@@ -221,7 +254,21 @@ namespace MaykerStudio.UniThumb
             }
             for (int i = 0; i < k_WarmPerFrame && s_WarmQueue.Count > 0; i++)
             {
-                UniThumbStorage.LoadByGuid(s_WarmQueue.Dequeue());
+                string guid = s_WarmQueue.Dequeue();
+                UniThumbStorage.LoadByGuid(guid);
+                // Lazy staleness check (timestamp-only, O(1) per GUID)
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path) && path.EndsWith(".unity"))
+                {
+                    if (UniThumbStorage.IsSceneStale(path))
+                    {
+                        s_StaleGuids.Add(guid);
+                    }
+                    else
+                    {
+                        s_StaleGuids.Remove(guid);
+                    }
+                }
             }
             if (s_WarmQueue.Count == 0 && !s_State.DrainLogged)
             {
@@ -253,6 +300,7 @@ namespace MaykerStudio.UniThumb
         private static int RebuildOverlayState()
         {
             s_GuidsWithThumbnails.Clear();
+            s_StaleGuids.Clear();
             string[] guids = UniThumbStorage.EnumerateThumbnailGuids();
             for (int i = 0; i < guids.Length; i++)
             {
@@ -262,6 +310,20 @@ namespace MaykerStudio.UniThumb
                 // entries resolve instantly inside LoadByGuid.
                 s_WarmQueue.Enqueue(guids[i]);
             }
+
+            // Rebuild staleness state for known thumbnails (timestamp-only, cheap)
+            foreach (string guid in s_GuidsWithThumbnails)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path) && path.EndsWith(".unity"))
+                {
+                    if (UniThumbStorage.IsSceneStale(path))
+                    {
+                        s_StaleGuids.Add(guid);
+                    }
+                }
+            }
+
             s_State.DrainLogged = false;
             return s_GuidsWithThumbnails.Count;
         }
@@ -325,6 +387,49 @@ namespace MaykerStudio.UniThumb
                 drawRect = iconRect;
             }
             GUI.DrawTexture(drawRect, thumbnail, ScaleMode.ScaleToFit);
+
+            // Draw staleness indicator: small yellow warning icon in top-right corner
+            if (s_StaleGuids.Contains(guid))
+            {
+                DrawStaleIndicator(drawRect);
+            }
+        }
+
+        /// <summary>
+        /// Draws a small yellow warning triangle in the top-right corner of the
+        /// thumbnail to indicate staleness. Uses EditorGUIUtility.IconContent
+        /// for the built-in warning icon.
+        /// </summary>
+        private static void DrawStaleIndicator(Rect drawRect)
+        {
+            const float indicatorSize = 12f;
+            const float padding = 2f;
+
+            Rect indicatorRect = new Rect(
+                drawRect.xMax - indicatorSize - padding,
+                drawRect.y + padding,
+                indicatorSize,
+                indicatorSize
+            );
+
+            // Draw yellow background circle
+            Color prevColor = GUI.color;
+            GUI.color = new Color(1f, 0.9f, 0.2f, 0.9f);
+            GUI.DrawTexture(indicatorRect, EditorGUIUtility.whiteTexture);
+            GUI.color = prevColor;
+
+            // Draw warning icon centered in the circle
+            GUIContent warningIcon = EditorGUIUtility.IconContent("Warning");
+            if (warningIcon?.image != null)
+            {
+                Rect iconRect = new Rect(
+                    indicatorRect.x + 1f,
+                    indicatorRect.y + 1f,
+                    indicatorSize - 2f,
+                    indicatorSize - 2f
+                );
+                GUI.DrawTexture(iconRect, warningIcon.image, ScaleMode.ScaleToFit);
+            }
         }
 
         /// <summary>
