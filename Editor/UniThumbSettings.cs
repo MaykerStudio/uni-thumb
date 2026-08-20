@@ -69,9 +69,20 @@ namespace MaykerStudio.UniThumb
 
             EnsureAssetFolder();
             settings = ScriptableObject.CreateInstance<UniThumbSettings>();
-            AssetDatabase.CreateAsset(settings, k_AssetPath);
-            EditorUtility.SetDirty(settings);
-            AssetDatabase.SaveAssets();
+            try
+            {
+                AssetDatabase.CreateAsset(settings, k_AssetPath);
+                EditorUtility.SetDirty(settings);
+                AssetDatabase.SaveAssets();
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning(
+                    "[UniThumb] Could not persist settings asset ("
+                        + exception.Message
+                        + "); using in-memory defaults."
+                );
+            }
             return settings;
         }
 
@@ -102,7 +113,13 @@ namespace MaykerStudio.UniThumb
                 return;
             }
             Directory.CreateDirectory(Path.Combine(Application.dataPath, "UniThumb"));
-            AssetDatabase.Refresh();
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            if (!AssetDatabase.IsValidFolder(k_AssetFolder))
+            {
+                Debug.LogWarning(
+                    "[UniThumb] Could not register Assets/UniThumb folder; settings may not persist."
+                );
+            }
         }
 
         #endregion

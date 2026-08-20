@@ -59,3 +59,5 @@ All components live in root `Editor/`.
 - Verify UI state via live `resolvedStyle`/class checks (execute_code) rather than screenshots; the available vision model is unreliable.
 - Package-internal paths resolve via `UniThumbPackagePaths` (`Editor/UniThumbPackagePaths.cs`), which uses `PackageInfo.FindForAssembly` to compute the project-relative package path. The package root is the repo root; `Project/Packages/manifest.json` pins it as `file:../..`, and inside the dev project the package resolves to Unity's installed `Packages/` asset-path form. UXML/USS are not loaded from `Assets/Editor/UniThumb`.
 - Staging/commit convention: root package files (`package.json`, `Editor/`, `README.md`, `CHANGELOG.md`, `LICENSE.md`, `images/`) ARE committed; `Project/` and `docs/` are excluded; `Packages/*.json` stay excluded - ask if unsure. AGENTS.md stays at the root and is excluded from the package tarball (pack policy).
+
+

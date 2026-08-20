@@ -1,7 +1,9 @@
 {
     "name": "UniThumb.Editor",
     "rootNamespace": "MaykerStudio.UniThumb",
-    "references": [],
+    "references": [
+        "UnityEngine.UI"
+    ],
     "includePlatforms": [
         "Editor"
     ],
