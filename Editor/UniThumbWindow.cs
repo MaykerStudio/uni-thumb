@@ -6,6 +6,7 @@ using UnityEditor.SceneManagement;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 
 namespace MaykerStudio.UniThumb
@@ -1247,6 +1248,39 @@ namespace MaykerStudio.UniThumb
                     bounds.Encapsulate(renderer.bounds);
                 }
             }
+
+            // TilemapRenderer.bounds can be stale/zero for unvisited tilemaps.
+            // Tilemap.cellBounds is reliable and reflects actual placed tiles.
+#if UNITY_6000_0_OR_NEWER
+            Tilemap[] tilemaps = UnityEngine.Object.FindObjectsByType<Tilemap>();
+#else
+            Tilemap[] tilemaps = UnityEngine.Object.FindObjectsOfType<Tilemap>();
+#endif
+            foreach (Tilemap tilemap in tilemaps)
+            {
+                if (tilemap == null)
+                {
+                    continue;
+                }
+                if ((layerMask.value & (1 << tilemap.gameObject.layer)) == 0)
+                {
+                    continue;
+                }
+                BoundsInt cellBounds = tilemap.cellBounds;
+                Vector3 worldMin = tilemap.CellToWorld(cellBounds.min);
+                Vector3 worldMax = tilemap.CellToWorld(cellBounds.max);
+                Bounds tileBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
+                if (!any)
+                {
+                    bounds = tileBounds;
+                    any = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(tileBounds);
+                }
+            }
+
             return any;
         }
 

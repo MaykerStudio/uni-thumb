@@ -947,7 +947,9 @@ namespace MaykerStudio.UniThumb
                     continue;
                 }
                 BoundsInt cellBounds = tilemap.cellBounds;
-                Bounds tileBounds = new Bounds(cellBounds.center, cellBounds.size);
+                Vector3 worldMin = tilemap.CellToWorld(cellBounds.min);
+                Vector3 worldMax = tilemap.CellToWorld(cellBounds.max);
+                Bounds tileBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
                 if (!any)
                 {
                     bounds = tileBounds;
