@@ -918,6 +918,14 @@ namespace MaykerStudio.UniThumb
                 {
                     continue;
                 }
+                // Skip renderers with zero/near-zero extents (e.g.
+                // ParticleSystemRenderer at origin) — encapsulating their
+                // zero-size bounds pulls the center toward the origin and
+                // inflates the framing well beyond the actual scene content.
+                if (renderer.bounds.extents.sqrMagnitude < 0.001f)
+                {
+                    continue;
+                }
                 if (!any)
                 {
                     bounds = renderer.bounds;
@@ -949,7 +957,14 @@ namespace MaykerStudio.UniThumb
                 BoundsInt cellBounds = tilemap.cellBounds;
                 Vector3 worldMin = tilemap.CellToWorld(cellBounds.min);
                 Vector3 worldMax = tilemap.CellToWorld(cellBounds.max);
-                Bounds tileBounds = new Bounds((worldMin + worldMax) * 0.5f, worldMax - worldMin);
+                Vector3 tileSize = worldMax - worldMin;
+                // Skip empty tilemaps (zero cellBounds produces zero-size
+                // world bounds that would pull framing toward the origin).
+                if (tileSize.sqrMagnitude < 0.001f)
+                {
+                    continue;
+                }
+                Bounds tileBounds = new Bounds((worldMin + worldMax) * 0.5f, tileSize);
                 if (!any)
                 {
                     bounds = tileBounds;
