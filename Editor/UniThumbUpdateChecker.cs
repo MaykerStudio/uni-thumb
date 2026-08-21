@@ -20,6 +20,7 @@ namespace MaykerStudio.UniThumb
             "https://api.github.com/repos/MaykerStudio/uni-thumb/releases/latest";
         private const string k_LastCheckTimeKey = "UniThumb.LastCheckTime";
         private const string k_LatestVersionKey = "UniThumb.LatestVersion";
+        private const string k_ReleaseUrlKey = "UniThumb.ReleaseUrl";
         private const double k_CheckIntervalHours = 24;
 
         #endregion
@@ -101,6 +102,7 @@ namespace MaykerStudio.UniThumb
         private static void ReadFromCache()
         {
             s_LatestVersion = EditorPrefs.GetString(k_LatestVersionKey, null);
+            s_ReleaseUrl = EditorPrefs.GetString(k_ReleaseUrlKey, null);
             if (string.IsNullOrEmpty(s_LatestVersion))
             {
                 return;
@@ -127,6 +129,14 @@ namespace MaykerStudio.UniThumb
 
             try
             {
+                // If Current is an unfinished AsyncOperation, wait for it.
+                UnityEngine.AsyncOperation asyncOp =
+                    s_Coroutine.Current as UnityEngine.AsyncOperation;
+                if (asyncOp != null && !asyncOp.isDone)
+                {
+                    return;
+                }
+
                 if (!s_Coroutine.MoveNext())
                 {
                     EditorApplication.update -= PumpCoroutine;
@@ -193,12 +203,13 @@ namespace MaykerStudio.UniThumb
                 // Version parsing failed; silently skip.
             }
 
-            SaveToCache(version);
+            SaveToCache(version, htmlUrl);
         }
 
-        private static void SaveToCache(string version)
+        private static void SaveToCache(string version, string url)
         {
             EditorPrefs.SetString(k_LatestVersionKey, version);
+            EditorPrefs.SetString(k_ReleaseUrlKey, url ?? string.Empty);
             EditorPrefs.SetString(k_LastCheckTimeKey, DateTime.UtcNow.Ticks.ToString());
         }
 
