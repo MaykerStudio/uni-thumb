@@ -368,7 +368,9 @@ TemplateContainer {
     padding: 2px 8px;
     background-color: var(--stt-panel);
     color: var(--stt-text);
-    border: 1px solid var(--stt-text);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--stt-text);
     border-radius: 3px;
 }
 
