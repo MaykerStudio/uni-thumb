@@ -172,6 +172,9 @@ namespace MaykerStudio.UniThumb
         private EnumField _storageModeField;
         private Label _storageModeHint;
         private bool _syncingStorageMode;
+        private VisualElement _updateBanner;
+        private Label _updateBannerLabel;
+        private Button _updateBannerDismissButton;
         private Toggle _lightingToggle;
         private Toggle _postfxToggle;
         private Toggle _captureUiToggle;
@@ -359,6 +362,11 @@ namespace MaykerStudio.UniThumb
             _batchResultHelp = rootVisualElement.Q<HelpBox>("batch-result-help");
             _statusHelp = rootVisualElement.Q<HelpBox>("status-help");
             _footerLabel = rootVisualElement.Q<Label>("footer-label");
+            _updateBanner = rootVisualElement.Q<VisualElement>("stt-update-banner");
+            _updateBannerLabel = rootVisualElement.Q<Label>("update-banner-label");
+            _updateBannerDismissButton = rootVisualElement.Q<Button>(
+                "update-banner-dismiss-button"
+            );
 #if !UNITY_6000_0_OR_NEWER
             _sceneTabButton = rootVisualElement.Q<Button>("scene-tab-button");
             _settingsTabButton = rootVisualElement.Q<Button>("settings-tab-button");
@@ -590,6 +598,10 @@ namespace MaykerStudio.UniThumb
             {
                 _cancelBatchButton.clicked += CancelBatch;
             }
+            if (_updateBannerDismissButton != null)
+            {
+                _updateBannerDismissButton.clicked += DismissUpdateBanner;
+            }
 #if !UNITY_6000_0_OR_NEWER
             if (_sceneTabButton != null)
             {
@@ -619,6 +631,7 @@ namespace MaykerStudio.UniThumb
 
         private void PushState()
         {
+            UpdateUpdateBanner();
             UpdateActiveSceneLabel();
             UpdateGenerateState();
 
@@ -2150,6 +2163,40 @@ namespace MaykerStudio.UniThumb
             int index = Mathf.Clamp(_resolutionIndex, 0, k_PresetResolutions.Length - 1);
             width = k_PresetResolutions[index];
             height = k_PresetResolutions[index];
+        }
+
+        private void UpdateUpdateBanner()
+        {
+            if (_updateBanner == null || !UniThumbUpdateChecker.IsCheckComplete)
+            {
+                return;
+            }
+
+            bool show = UniThumbUpdateChecker.IsUpdateAvailable;
+            _updateBanner.EnableInClassList("stt-hidden", !show);
+
+            if (show && _updateBannerLabel != null)
+            {
+                _updateBannerLabel.text =
+                    "UniThumb "
+                    + UniThumbUpdateChecker.LatestVersion
+                    + " is available (current: "
+                    + GetCurrentVersion()
+                    + ")";
+            }
+        }
+
+        private string GetCurrentVersion()
+        {
+            var info = UnityEditor.PackageManager.PackageInfo.FindForAssembly(
+                typeof(UniThumbWindow).Assembly
+            );
+            return info?.version ?? "unknown";
+        }
+
+        private void DismissUpdateBanner()
+        {
+            _updateBanner?.EnableInClassList("stt-hidden", true);
         }
 
         #endregion

@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate package.json matches tag
+        run: |
+          PKG_VERSION=$(jq -r '.version' package.json)
+          TAG_VERSION=${GITHUB_REF_NAME#v}
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
+      - name: Verify C# files exist
+        run: |
+          CS_COUNT=$(find Editor -name "*.cs" | wc -l)
+          echo "Found $CS_COUNT C# files in Editor/"
+          if [ "$CS_COUNT" -eq 0 ]; then
+            echo "::error::No C# files found"
+            exit 1
+          fi
+
+      - name: Check for obvious syntax issues
+        run: |
+          # Verify all files have matching braces
+          for f in $(find Editor -name "*.cs"); do
+            OPEN=$(grep -o '{' "$f" | wc -l)
+            CLOSE=$(grep -o '}' "$f" | wc -l)
+            if [ "$OPEN" -ne "$CLOSE" ]; then
+              echo "::error file=$f::Mismatched braces: $OPEN open, $CLOSE close"
+              exit 1
+            fi
+          done
+          echo "All C# files have balanced braces"
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          name: v${{ steps.version.outputs.VERSION }}

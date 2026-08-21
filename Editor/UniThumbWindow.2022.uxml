@@ -4,6 +4,10 @@
             <ui:Label text="Active Scene" class="stt-section-header" />
             <ui:Label name="active-scene-label" class="stt-scene-path" tooltip="Scene captured by Generate; must be saved first" />
         </ui:VisualElement>
+        <ui:VisualElement name="stt-update-banner" class="stt-update-banner stt-hidden">
+            <ui:Label name="update-banner-label" text="A new version of UniThumb is available!" />
+            <ui:Button name="update-banner-dismiss-button" text="Dismiss" />
+        </ui:VisualElement>
         <ui:VisualElement class="stt-tab-bar">
             <ui:Button name="scene-tab-button" text="Scene Thumbnail" class="stt-tab-button" />
             <ui:Button name="settings-tab-button" text="Settings" class="stt-tab-button" />
