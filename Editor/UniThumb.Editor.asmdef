@@ -1,0 +1,39 @@
+{
+    "name": "UniThumb.Editor",
+    "rootNamespace": "MaykerStudio.UniThumb",
+    "references": [
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "",
+            "define": "HAS_URP"
+        },
+        {
+            "name": "com.unity.render-pipelines.core",
+            "expression": "",
+            "define": "HAS_SRP_CORE"
+        },
+        {
+            "name": "com.unity.render-pipelines.high-definition",
+            "expression": "",
+            "define": "HAS_HDRP"
+        },
+        {
+            "name": "com.unity.visualeffectgraph",
+            "expression": "",
+            "define": "HAS_VFX"
+        }
+    ],
+    "noEngineReferences": false
+}

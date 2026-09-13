@@ -1,0 +1,26 @@
+{
+  "name": "com.maykerstudio.unithumb",
+  "displayName": "UniThumb",
+  "version": "1.0.0",
+  "unity": "2022.3",
+  "unityRelease": "0f1",
+  "description": "Editor tool that renders thumbnails of scenes and draws them on the scene assets in the Unity Project window, so scenes are visually identifiable at a glance.",
+  "license": "BSD-3-Clause",
+  "homepage": "https://github.com/MaykerStudio/uni-thumb",
+  "repository": { "type": "git", "url": "https://github.com/MaykerStudio/uni-thumb.git" },
+  "author": {
+    "name": "MaykerStudio",
+    "url": "https://maykedev.com",
+    "email": "maykerstudio@proton.me"
+  },
+  "dependencies": {},
+  "testables": [
+    "com.maykerstudio.unithumb"
+  ],
+  "files": [
+    "Editor",
+    "README.md",
+    "LICENSE.md",
+    "CHANGELOG.md"
+  ]
+}

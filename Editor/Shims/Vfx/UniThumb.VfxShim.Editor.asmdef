@@ -1,0 +1,20 @@
+{
+    "name": "UniThumb.VfxShim.Editor",
+    "rootNamespace": "MaykerStudio.UniThumb.VfxShim",
+    "references": [
+        "UniThumb.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "HAS_VFX"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

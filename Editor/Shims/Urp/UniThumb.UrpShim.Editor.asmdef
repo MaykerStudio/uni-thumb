@@ -1,0 +1,29 @@
+{
+    "name": "UniThumb.UrpShim.Editor",
+    "rootNamespace": "MaykerStudio.UniThumb.UrpShim",
+    "references": [
+        "UniThumb.Editor",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.2D.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "HAS_URP"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "",
+            "define": "HAS_URP"
+        }
+    ],
+    "noEngineReferences": false
+}

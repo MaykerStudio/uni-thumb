@@ -1,0 +1,22 @@
+{
+    "name": "UniThumb.Editor.Tests",
+    "rootNamespace": "MaykerStudio.UniThumb.Tests",
+    "references": [
+        "UniThumb.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

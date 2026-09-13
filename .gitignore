@@ -1,0 +1,21 @@
+# Unity dev project - lives under Project~/, never part of the UPM package.
+# Trailing ~ is required: UPM imports the whole package folder for file:
+# references, and Unity excludes folders ending in ~ from asset import.
+# The package root is the repository root (package.json, Editor/, docs at root).
+/Project~/
+
+# Unity-generated solution/project files (root leftovers and Project~ output)
+*.sln
+*.csproj
+
+# UniThumb package tarball output (scripts/pack-unithumb.ps1)
+dist/
+*.tgz
+
+# Plan artifacts and internal docs (never shipped)
+/docs
+/docs.meta
+
+# Stale meta for nonexistent folders
+/dist.meta
+/Editor/Tests.meta
