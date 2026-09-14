@@ -50,7 +50,7 @@ Window > Package Manager > + > Add package from git URL:
 https://github.com/MaykerStudio/uni-thumb.git
 ```
 
-To install from a tarball, build one with `scripts/pack-unithumb.ps1` and use Add package from tarball. For local development, add the repo root with Add package from disk, or add a `file:` entry to `Packages/manifest.json`.
+To install from a tarball, build one with `scripts/pack-unithumb.ps1` in the [uni-thumb-dev](https://github.com/MaykerStudio/uni-thumb-dev) repo and use Add package from tarball. For local development, add the repo root with Add package from disk, or add a `file:` entry to `Packages/manifest.json`.
 
 ## Usage
 
@@ -75,7 +75,7 @@ UniThumb names each PNG after the asset GUID without writing `.meta` files or im
 
 ## Contributing
 
-PRs are welcome, including Built-in render pipeline support; see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, verification, and commit guidelines. The EditMode test suite lives in `Tests/Editor/`.
+PRs are welcome, including Built-in render pipeline support; contribute via the [uni-thumb-dev](https://github.com/MaykerStudio/uni-thumb-dev) repo — see [CONTRIBUTING.md](https://github.com/MaykerStudio/uni-thumb-dev/blob/main/CONTRIBUTING.md) for setup, verification, and commit guidelines. The EditMode test suite lives in `Tests/Editor/` there.
 
 ## AI disclosure
 
