@@ -75,7 +75,7 @@ UniThumb names each PNG after the asset GUID without writing `.meta` files or im
 
 ## Contributing
 
-PRs are welcome, including Built-in render pipeline support; contribute via the [uni-thumb-dev](https://github.com/MaykerStudio/uni-thumb-dev) repo — see [CONTRIBUTING.md](https://github.com/MaykerStudio/uni-thumb-dev/blob/main/CONTRIBUTING.md) for setup, verification, and commit guidelines. The EditMode test suite lives in `Tests/Editor/` there.
+PRs are welcome, including Built-in render pipeline support. **Issues and pull requests are disabled in this repo** — please contribute via the [uni-thumb-dev](https://github.com/MaykerStudio/uni-thumb-dev) repo instead; see [CONTRIBUTING.md](https://github.com/MaykerStudio/uni-thumb-dev/blob/main/CONTRIBUTING.md) for setup, verification, and commit guidelines. The EditMode test suite lives in `Tests/Editor/` there.
 
 ## AI disclosure
 
