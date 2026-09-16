@@ -61,7 +61,7 @@ Existing guards in `UniThumbCapture.cs` (`FindObjectsByType` vs `FindObjectsOfTy
 
 ## Verification
 
-- Run the EditMode test suite (~74 tests):
+- Run the EditMode test suite (~500 cases across 40 files as of v1.0.0):
   - In Unity: **Window > General > Test Runner**, select the **EditMode** tab, click **Run All**
     (tests are discoverable because the package lists itself in `testables` in `package.json`)
   - CLI alternative (adjust the editor path for your install):

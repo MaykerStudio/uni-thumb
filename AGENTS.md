@@ -6,7 +6,7 @@ Unity 6000.4.8f1 (Unity 6), URP, Linear color space. The project is a single Edi
 
 ```
 Editor/  - all package code: UniThumb.Editor assembly (`includePlatforms: Editor`), UniThumbWindow.uxml/.uss
-Tests/   - EditMode tests: UniThumb.Editor.Tests assembly (12 tests); internals exposed to tests via Editor/AssemblyInfo.cs
+Tests/   - EditMode tests: UniThumb.Editor.Tests assembly (~500 cases across 40 files as of v1.0.0); internals exposed to tests via Editor/AssemblyInfo.cs
 Project~ - two Unity dev projects (gitignored, never packaged): 'UniThumb 6 URP' (Unity 6000.4.8f1, primary) and 'UniThumb Dev 6 2D URP' (Unity 2022.3.19f1, fallback-UI checks)
 ```
 
@@ -14,7 +14,7 @@ Project~ - two Unity dev projects (gitignored, never packaged): 'UniThumb 6 URP'
 - `Assets/UniThumb/` inside each dev project is runtime-created, not part of the package: it holds the tool's settings asset (`UniThumbSettings.asset`, auto-created) and generated example scenes. Each dev project's `Packages/manifest.json` pins `com.maykerstudio.unithumb` to the repository root as a local file dependency.
 - The package ships no example scenes. Example scenes are created on demand: `Tools > UniThumb > Generate Example Scenes` writes 10 scenes to `Assets/UniThumb/Examples/` in the consuming Unity project (here: either dev project under `Project~/`).
 - **Core asmdef keeps zero SRP refs** (`references` holds only `UnityEngine.UI`, auto-referenced). Hybrid pipeline access: URP through the constraint-gated `UniThumb.UrpShim.Editor` shim (defineConstraints HAS_URP, refs Universal.Runtime + Core.Runtime; core reaches it ONLY via the `UniThumbUrp` narrow reflection dispatch under `#if HAS_URP`, never `using Universal`) + Core data types direct under HAS_SRP_CORE, narrow dynamic for HDRP frame-settings and VFX (cached, once-log) plus Light2D-absent fail-open guards; no `package.json` deps; Built-in compiles via `#else` fallbacks (out of scope per 20260910 decision: URP + HDRP only, no Built-in proof).
-- Tests live in `Tests/Editor/` (12 EditMode tests; run via Window > General > Test Runner). No runtime code - the whole project is editor tooling.
+- Tests live in `Tests/Editor/` (EditMode suite, ~500 cases as of v1.0.0; run via Window > General > Test Runner). No runtime code - the whole project is editor tooling.
 
 ## Component map (data flow)
 
@@ -24,8 +24,9 @@ All components live in root `Editor/`.
 
 - **Window**: `UniThumbWindow.cs` + `.uxml` + `.uss`. UI Toolkit, theme via `.theme-light`/`.theme-dark` classes on root. Subscribes `EditorSceneManager.sceneSaved`, `activeSceneChangedInEditMode`, `EditorApplication.hierarchyChanged`, and `Undo.undoRedoPerformed` in OnEnable/OnDisable for live preview refresh and Regenerate on Save. Menu: `Window/UniThumb`.
 - **Capture**: `UniThumbCapture.cs` - static API, creates temp `Camera` + RenderTexture, never renders through the SceneView camera. Handles framing (Scene View angle or orbit around bounds), skybox/solid-color, lighting override, post-processing (reflection), HDR->sRGB readback, corrupt-image detection with `SubmitRenderRequest` fallback, downscale retry above 16M px.
-- **Storage**: `UniThumbStorage.cs` - writes a PNG atomically per scene under `Library/SceneThumbnails/{sceneGuid}.*` (GUID-named, outside Assets, no `.meta`). Cache invalidation uses scene file `LastWriteTimeUtc` timestamps (independent of EditorPrefs).
-- **Batch**: `UniThumbBatchMenus.cs` - `Assets/` menu items (Generate/Clear/Refresh All/Generate Folder, priorities 1100-1103). Two-pass `EditorApplication.update` pump; `CollectFolderScenePaths(folderPath)` is the public folder-scene collector.
+- **Storage**: `UniThumbStorage.cs` - writes `{guid}.png` per scene or prefab into the ACTIVE mode folder: `Library/SceneThumbnails/` (`LibraryCache`: outside Assets, no `.meta`, no import) or `Assets/UniThumb/Thumbnails/` (`TrackedInAssets`: `.meta` sidecars, `AssetDatabase` deletes). Mode is read from `UniThumbSettings` at call time, never cached; `MoveThumbnailsTo` migrates folders on mode switch. Prefabs use the GUID-keyed API (`SavePrefabThumbnail`/`LoadPrefabThumbnail`/`HasPrefabThumbnail`/`DeleteByGuid`) sharing the same folder, ownership, and LRU rules. Invalidation uses asset-file `LastWriteTimeUtc` ticks; LRU size cap comes from settings.
+- **Batch**: `UniThumbBatchMenus.cs` - `Assets/` menu items (Generate/Clear/Refresh All/Generate Folder, priorities 1100-1103). Two-pass `EditorApplication.update` pump; `CollectFolderScenePaths(folderPath)` is the public folder-scene collector, `CollectFolderPrefabPaths` the prefab counterpart.
+- **Prefab capture**: `UniThumbCapture.CapturePrefab` - stages each prefab apart from scene content and reverts through Undo (no Prefab Stage needed). Save-triggered regen via `UniThumbPrefabSaveProcessor` -> `UniThumbPrefabAutoRegen` (armed only when the setting is on AND the window is open); all prefab paths reuse the Guard -> Capture -> Storage -> IconService chain.
 - **Icon overlay**: `UniThumbIconService.cs` - draws thumbnails over Project window items via `EditorApplication.projectWindowItemOnGUI`; `ApplyIcon`/`ClearIcon`/`ReapplyAllIcons`.
 - **Folder menu**: `UniThumbFolderMenu.cs` - Project window folder context menu; shares `UniThumbWindow.uss`.
 - **Settings**: `UniThumbSettings.cs` - tool settings asset auto-created at `Assets/UniThumb/UniThumbSettings.asset` (in the dev project).
@@ -58,6 +59,7 @@ All components live in root `Editor/`.
 - Run `csharpier format <file>` on every modified `.cs` (note: **`format` subcommand is required**, bare path fails).
 - Verify UI state via live `resolvedStyle`/class checks (execute_code) rather than screenshots; the available vision model is unreliable.
 - Package-internal paths resolve via `UniThumbPackagePaths` (`Editor/UniThumbPackagePaths.cs`), which uses `PackageInfo.FindForAssembly` to compute the project-relative package path. The package root is the repo root; each dev project's `Packages/manifest.json` pins it as a local file dependency, and inside a dev project the package resolves to Unity's installed `Packages/` asset-path form. UXML/USS are not loaded from `Assets/Editor/UniThumb`.
-- Staging/commit convention: root package files (`package.json`, `Editor/`, `Tests/`, `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `LICENSE.md`, `ROADMAP.md`, `Documentation~/images/`, `.github/workflows/`) ARE committed; `Project~/` and `docs/` are excluded; `Packages/*.json` stay excluded - ask if unsure. AGENTS.md stays at the root and is excluded from the package tarball (pack policy).
+- Staging: follow the Commit Convention in `CONTRIBUTING.md` (single owner of the committed-file list); `Project~/`, `docs/`, and `Packages/*.json` stay out - ask if unsure. AGENTS.md stays at the root and is excluded from the package tarball (pack policy).
+- Release: bump `version` in `package.json` + add a `CHANGELOG.md` entry, commit on main, push tag `vX.Y.Z` matching the version exactly (`release.yml` rejects mismatches). CI builds the tarball via `scripts/pack-unithumb.ps1` and attaches it to the GitHub Release; `UniThumbUpdateChecker` polls `uni-thumb` releases, so the tarball must be attached there.
 
 
